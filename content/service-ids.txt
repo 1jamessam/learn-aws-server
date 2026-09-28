@@ -1,0 +1,13 @@
+compute: ec2 lambda ec2-auto-scaling elastic-beanstalk lightsail batch outposts local-zones wavelength app-runner
+containers: ecs eks fargate ecr
+storage: s3 s3-glacier ebs efs fsx storage-gateway aws-backup s3-tables
+database: rds aurora aurora-dsql dynamodb elasticache memorydb documentdb neptune keyspaces timestream redshift
+networking: vpc cloudfront route53 elb api-gateway direct-connect transit-gateway site-to-site-vpn privatelink global-accelerator vpc-lattice cloud-wan network-firewall
+security: iam iam-identity-center organizations control-tower kms secrets-manager cognito waf shield guardduty security-hub inspector macie cloudtrail config acm detective security-lake verified-access
+analytics: athena glue emr kinesis-data-streams data-firehose msk opensearch quicksight lake-formation sagemaker-unified-studio managed-flink
+ai-ml: bedrock bedrock-agentcore sagemaker-ai amazon-q-business amazon-q-developer nova rekognition textract comprehend transcribe kiro
+integration: sqs sns eventbridge step-functions appsync mq iot-core
+management: cloudwatch cloudformation cdk systems-manager trusted-advisor x-ray well-architected-tool service-catalog elastic-disaster-recovery application-recovery-controller resilience-hub fault-injection-service
+devtools: codepipeline codebuild
+migration: migration-hub application-migration-service dms datasync snow-family transfer-family aws-transform
+cost: cost-explorer budgets savings-plans compute-optimizer

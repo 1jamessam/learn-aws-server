@@ -1,0 +1,2793 @@
+{
+  "snapshotDate": "2026-09-28",
+  "sources": [
+    "https://www.amazon.jobs/content/en/our-workplace/leadership-principles",
+    "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html",
+    "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-professional-02/solutions-architect-professional-02.html",
+    "https://docs.aws.amazon.com/wellarchitected/latest/framework/welcome.html",
+    "https://aws.amazon.com/about-aws/global-infrastructure/",
+    "https://aws.amazon.com/blogs/aws/top-announcements-of-aws-reinvent-2025",
+    "https://aws.amazon.com/blogs/aws/top-announcements-of-the-aws-summit-in-new-york-2026/",
+    "https://aws.amazon.com/about-aws/whats-new/2025/12/amazon-s3-maximum-object-size-50-tb/",
+    "https://aws.amazon.com/about-aws/whats-new/2025/09/amazon-ebs-size-provisioned-performance-gp3-volumes/",
+    "https://aws.amazon.com/about-aws/whats-new/2025/08/amazon-sqs-max-payload-size-1mib/",
+    "https://aws.amazon.com/about-aws/whats-new/2026/09/amazon-sns-1mib-support/",
+    "https://aws.amazon.com/about-aws/whats-new/2025/10/aws-lambda-payload-size-256-kb-1-mb-invocations/",
+    "https://aws.amazon.com/about-aws/whats-new/2025/10/amazon-kinesis-data-streams-10x-larger-record-sizes/",
+    "https://docs.aws.amazon.com/AmazonS3/latest/userguide/s3-vectors-limitations.html",
+    "https://aws.amazon.com/about-aws/whats-new/2025/11/aws-nat-gateway-regional-availability/",
+    "https://docs.aws.amazon.com/step-functions/latest/dg/service-quotas.html",
+    "https://docs.aws.amazon.com/snowball/latest/developer-guide/snowball-edge-availability-change.html",
+    "https://aws.amazon.com/blogs/devops/amazon-q-developer-end-of-support-announcement/",
+    "https://aws.amazon.com/about-aws/whats-new/2026/09/new-agentcore-runtime-generally-available/",
+    "https://aws.amazon.com/savingsplans/database-pricing/",
+    "https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/flat-rate-pricing-plan.html"
+  ],
+  "cards": [
+    {
+      "id": "fc-storage-001",
+      "deck": "storage",
+      "front": "S3 maximum object size (2026)",
+      "back": "50 TB (raised from 5 TB in Dec 2025). Objects over 5 GB must use multipart upload; >5 TB needs the S3 Transfer Manager in supported SDKs/CLI.",
+      "serviceId": "s3"
+    },
+    {
+      "id": "fc-storage-002",
+      "deck": "storage",
+      "front": "S3 single PUT maximum size",
+      "back": "5 GB. Use multipart upload (recommended above ~100 MB).",
+      "serviceId": "s3"
+    },
+    {
+      "id": "fc-storage-003",
+      "deck": "storage",
+      "front": "S3 multipart upload limits",
+      "back": "Up to 10,000 parts; each part 5 MiB–5 GiB (last part can be smaller).",
+      "serviceId": "s3"
+    },
+    {
+      "id": "fc-storage-004",
+      "deck": "storage",
+      "front": "S3 request rate per prefix",
+      "back": "At least 3,500 PUT/COPY/POST/DELETE and 5,500 GET/HEAD requests per second per partitioned prefix.",
+      "serviceId": "s3"
+    },
+    {
+      "id": "fc-storage-005",
+      "deck": "storage",
+      "front": "S3 durability design",
+      "back": "99.999999999% (11 nines) for all storage classes; Standard designed for 99.99% availability.",
+      "serviceId": "s3"
+    },
+    {
+      "id": "fc-storage-006",
+      "deck": "storage",
+      "front": "S3 consistency model",
+      "back": "Strong read-after-write consistency for all PUTs, DELETEs, and LIST operations (since Dec 2020).",
+      "serviceId": "s3"
+    },
+    {
+      "id": "fc-storage-007",
+      "deck": "storage",
+      "front": "S3 Standard-IA minimum storage duration / object size charge",
+      "back": "30 days minimum; 128 KB minimum billable object size; per-GB retrieval fee.",
+      "serviceId": "s3"
+    },
+    {
+      "id": "fc-storage-008",
+      "deck": "storage",
+      "front": "S3 One Zone-IA",
+      "back": "Single-AZ, ~20% cheaper than Standard-IA, 99.5% availability design; for re-creatable data.",
+      "serviceId": "s3"
+    },
+    {
+      "id": "fc-storage-009",
+      "deck": "storage",
+      "front": "S3 Glacier Instant Retrieval",
+      "back": "Millisecond retrieval, 90-day minimum duration; for data accessed about once a quarter.",
+      "serviceId": "s3-glacier"
+    },
+    {
+      "id": "fc-storage-010",
+      "deck": "storage",
+      "front": "S3 Glacier Flexible Retrieval retrieval times",
+      "back": "Expedited 1–5 min, Standard 3–5 hours, Bulk 5–12 hours (free). 90-day minimum.",
+      "serviceId": "s3-glacier"
+    },
+    {
+      "id": "fc-storage-011",
+      "deck": "storage",
+      "front": "S3 Glacier Deep Archive retrieval times",
+      "back": "Standard within 12 hours, Bulk within 48 hours. 180-day minimum. Lowest-cost storage class.",
+      "serviceId": "s3-glacier"
+    },
+    {
+      "id": "fc-storage-012",
+      "deck": "storage",
+      "front": "S3 Intelligent-Tiering",
+      "back": "Automatically moves objects among Frequent, Infrequent (30 days), and Archive Instant Access (90 days) tiers; optional Archive/Deep Archive tiers. Small per-object monitoring fee, no retrieval fees.",
+      "serviceId": "s3"
+    },
+    {
+      "id": "fc-storage-013",
+      "deck": "storage",
+      "front": "S3 Express One Zone",
+      "back": "Single-AZ, directory-bucket storage class with consistent single-digit millisecond latency; up to 10x faster than Standard for hot data.",
+      "serviceId": "s3"
+    },
+    {
+      "id": "fc-storage-014",
+      "deck": "storage",
+      "front": "S3 Object Lock modes",
+      "back": "Governance: users with special permission can override. Compliance: nobody, including root, can delete or shorten retention. Legal hold has no expiry.",
+      "serviceId": "s3"
+    },
+    {
+      "id": "fc-storage-015",
+      "deck": "storage",
+      "front": "S3 Replication: SRR vs CRR",
+      "back": "Same-Region Replication vs Cross-Region Replication. Both require versioning; replicate new objects (use Batch Replication for existing ones). S3 RTC gives 99.99% of objects in 15 minutes SLA.",
+      "serviceId": "s3"
+    },
+    {
+      "id": "fc-storage-016",
+      "deck": "storage",
+      "front": "S3 Multi-Region Access Points",
+      "back": "Single global endpoint routing to the nearest bucket replica, with active/passive failover controls.",
+      "serviceId": "s3"
+    },
+    {
+      "id": "fc-storage-017",
+      "deck": "storage",
+      "front": "S3 Vectors (GA Dec 2025)",
+      "back": "Vector buckets with up to 10,000 indexes per bucket and 2 billion vectors per index; ~100 ms query latency; up to 90% lower cost vs specialized vector DBs.",
+      "serviceId": "s3"
+    },
+    {
+      "id": "fc-storage-018",
+      "deck": "storage",
+      "front": "S3 Tables",
+      "back": "Fully managed Apache Iceberg tables in table buckets with automatic compaction; re:Invent 2025 added replication and Intelligent-Tiering.",
+      "serviceId": "s3-tables"
+    },
+    {
+      "id": "fc-storage-019",
+      "deck": "storage",
+      "front": "S3 Block Public Access",
+      "back": "Account- and bucket-level settings that override ACLs/policies granting public access; enabled by default on new buckets.",
+      "serviceId": "s3"
+    },
+    {
+      "id": "fc-storage-020",
+      "deck": "storage",
+      "front": "S3 default encryption",
+      "back": "All new objects are encrypted with SSE-S3 by default (since Jan 2023); SSE-KMS/DSSE-KMS optional.",
+      "serviceId": "s3"
+    },
+    {
+      "id": "fc-storage-021",
+      "deck": "storage",
+      "front": "EBS gp3 limits (Sept 2025)",
+      "back": "Up to 64 TiB, 80,000 IOPS, 2,000 MiB/s per volume; baseline 3,000 IOPS / 125 MiB/s regardless of size.",
+      "serviceId": "ebs"
+    },
+    {
+      "id": "fc-storage-022",
+      "deck": "storage",
+      "front": "EBS gp2 performance model",
+      "back": "3 IOPS per GiB (min 100), burst to 3,000, max 16,000 IOPS; performance tied to size.",
+      "serviceId": "ebs"
+    },
+    {
+      "id": "fc-storage-023",
+      "deck": "storage",
+      "front": "EBS io2 Block Express",
+      "back": "Up to 64 TiB, 256,000 IOPS, 4,000 MiB/s, sub-millisecond latency, 99.999% durability.",
+      "serviceId": "ebs"
+    },
+    {
+      "id": "fc-storage-024",
+      "deck": "storage",
+      "front": "EBS st1 vs sc1",
+      "back": "st1: throughput-optimized HDD for frequent sequential access. sc1: cold HDD, lowest cost for infrequent access. Neither can be a boot volume.",
+      "serviceId": "ebs"
+    },
+    {
+      "id": "fc-storage-025",
+      "deck": "storage",
+      "front": "EBS Multi-Attach",
+      "back": "io1/io2 volumes attached to up to 16 Nitro instances in the same AZ; requires a cluster-aware file system.",
+      "serviceId": "ebs"
+    },
+    {
+      "id": "fc-storage-026",
+      "deck": "storage",
+      "front": "EBS scope",
+      "back": "An EBS volume lives in one AZ; move across AZs/Regions by snapshot and restore/copy.",
+      "serviceId": "ebs"
+    },
+    {
+      "id": "fc-storage-027",
+      "deck": "storage",
+      "front": "Instance store",
+      "back": "Ephemeral block storage physically attached to the host; data lost on stop/terminate/host failure; very high IOPS.",
+      "serviceId": "ec2"
+    },
+    {
+      "id": "fc-storage-028",
+      "deck": "storage",
+      "front": "EFS storage classes",
+      "back": "Standard, Infrequent Access, and Archive; lifecycle management moves files automatically.",
+      "serviceId": "efs"
+    },
+    {
+      "id": "fc-storage-029",
+      "deck": "storage",
+      "front": "EFS vs FSx for Windows",
+      "back": "EFS: NFS for Linux, elastic, multi-AZ. FSx for Windows: SMB, NTFS ACLs, Active Directory integration.",
+      "serviceId": "efs"
+    },
+    {
+      "id": "fc-storage-030",
+      "deck": "storage",
+      "front": "FSx for Lustre",
+      "back": "Parallel file system for HPC/ML; hundreds of GB/s; integrates with S3 via data repository associations.",
+      "serviceId": "fsx"
+    },
+    {
+      "id": "fc-storage-031",
+      "deck": "storage",
+      "front": "FSx for NetApp ONTAP",
+      "back": "Managed ONTAP with NFS, SMB, iSCSI, snapshots, SnapMirror; since re:Invent 2025 data can be accessed through S3.",
+      "serviceId": "fsx"
+    },
+    {
+      "id": "fc-storage-032",
+      "deck": "storage",
+      "front": "Storage Gateway types",
+      "back": "S3 File Gateway (NFS/SMB to S3), FSx File Gateway, Volume Gateway (iSCSI cached/stored), Tape Gateway (VTL).",
+      "serviceId": "storage-gateway"
+    },
+    {
+      "id": "fc-storage-033",
+      "deck": "storage",
+      "front": "AWS Backup Vault Lock",
+      "back": "WORM protection for backup vaults. Compliance mode is immutable after a grace period; governance mode can be changed by privileged users.",
+      "serviceId": "aws-backup"
+    },
+    {
+      "id": "fc-storage-034",
+      "deck": "storage",
+      "front": "AWS Backup logically air-gapped vault",
+      "back": "Locked vault in compliance mode with AWS-owned encryption, shareable to other accounts via RAM for recovery after account compromise.",
+      "serviceId": "aws-backup"
+    },
+    {
+      "id": "fc-storage-035",
+      "deck": "storage",
+      "front": "EBS encryption by default",
+      "back": "Per-account, per-Region setting that encrypts all new EBS volumes and snapshot copies with KMS.",
+      "serviceId": "ebs"
+    },
+    {
+      "id": "fc-database-001",
+      "deck": "database",
+      "front": "DynamoDB maximum item size",
+      "back": "400 KB, including attribute names and values.",
+      "serviceId": "dynamodb"
+    },
+    {
+      "id": "fc-database-002",
+      "deck": "database",
+      "front": "DynamoDB read consistency options",
+      "back": "Eventually consistent (default, half the RCU cost) or strongly consistent reads; transactions via TransactWriteItems/TransactGetItems.",
+      "serviceId": "dynamodb"
+    },
+    {
+      "id": "fc-database-003",
+      "deck": "database",
+      "front": "DynamoDB RCU/WCU definitions",
+      "back": "1 RCU = one strongly consistent read/s (or two eventually consistent) of up to 4 KB. 1 WCU = one write/s of up to 1 KB.",
+      "serviceId": "dynamodb"
+    },
+    {
+      "id": "fc-database-004",
+      "deck": "database",
+      "front": "DynamoDB GSI vs LSI",
+      "back": "GSI: different partition key, created anytime, eventually consistent, own throughput. LSI: same partition key, different sort key, created only at table creation, up to 10 GB per partition key value.",
+      "serviceId": "dynamodb"
+    },
+    {
+      "id": "fc-database-005",
+      "deck": "database",
+      "front": "DynamoDB PITR recovery window",
+      "back": "Continuous backups; restore to any second within a configurable 1–35 day window.",
+      "serviceId": "dynamodb"
+    },
+    {
+      "id": "fc-database-006",
+      "deck": "database",
+      "front": "DynamoDB Streams retention",
+      "back": "24 hours; ordered item-level change records per item, often consumed by Lambda.",
+      "serviceId": "dynamodb"
+    },
+    {
+      "id": "fc-database-007",
+      "deck": "database",
+      "front": "DynamoDB global tables MRSC",
+      "back": "Multi-Region strong consistency (GA June 2025): exactly three Regions (or two replicas + a witness); writes synchronously replicated before acknowledging.",
+      "serviceId": "dynamodb"
+    },
+    {
+      "id": "fc-database-008",
+      "deck": "database",
+      "front": "DynamoDB global tables default conflict resolution",
+      "back": "Multi-Region eventual consistency with last-writer-wins reconciliation.",
+      "serviceId": "dynamodb"
+    },
+    {
+      "id": "fc-database-009",
+      "deck": "database",
+      "front": "DAX",
+      "back": "In-memory write-through cache for DynamoDB delivering microsecond reads; API-compatible; eventually consistent reads only.",
+      "serviceId": "dynamodb"
+    },
+    {
+      "id": "fc-database-010",
+      "deck": "database",
+      "front": "DynamoDB TTL",
+      "back": "Automatically deletes expired items at no WCU cost, typically within a few days of expiry.",
+      "serviceId": "dynamodb"
+    },
+    {
+      "id": "fc-database-011",
+      "deck": "database",
+      "front": "RDS Multi-AZ DB instance",
+      "back": "One synchronous standby in another AZ; not readable; automatic DNS failover typically in 1–2 minutes.",
+      "serviceId": "rds"
+    },
+    {
+      "id": "fc-database-012",
+      "deck": "database",
+      "front": "RDS Multi-AZ DB cluster",
+      "back": "One writer + two readable standbys in three AZs; semi-synchronous replication; failover typically under 35 seconds.",
+      "serviceId": "rds"
+    },
+    {
+      "id": "fc-database-013",
+      "deck": "database",
+      "front": "RDS read replicas",
+      "back": "Asynchronous replication; up to 15 per source for MySQL/MariaDB/PostgreSQL; can be cross-Region; promotion is manual.",
+      "serviceId": "rds"
+    },
+    {
+      "id": "fc-database-014",
+      "deck": "database",
+      "front": "RDS automated backup retention",
+      "back": "0–35 days; enables point-in-time restore (typically to within 5 minutes).",
+      "serviceId": "rds"
+    },
+    {
+      "id": "fc-database-015",
+      "deck": "database",
+      "front": "RDS Proxy",
+      "back": "Managed connection pooling for RDS/Aurora; improves Lambda scalability, failover time, and supports IAM auth and Secrets Manager.",
+      "serviceId": "rds"
+    },
+    {
+      "id": "fc-database-016",
+      "deck": "database",
+      "front": "RDS for SQL Server/Oracle storage max (re:Invent 2025)",
+      "back": "Up to 256 TiB storage, plus Developer Edition support and M7i/R7i instances.",
+      "serviceId": "rds"
+    },
+    {
+      "id": "fc-database-017",
+      "deck": "database",
+      "front": "Aurora storage",
+      "back": "Six copies across three AZs; tolerates loss of 2 copies for writes and 3 for reads; auto-grows up to 256 TiB (engine-version dependent).",
+      "serviceId": "aurora"
+    },
+    {
+      "id": "fc-database-018",
+      "deck": "database",
+      "front": "Aurora Replicas",
+      "back": "Up to 15 low-lag replicas on shared storage; reader endpoint load-balances; promoted automatically on failover.",
+      "serviceId": "aurora"
+    },
+    {
+      "id": "fc-database-019",
+      "deck": "database",
+      "front": "Aurora Global Database",
+      "back": "Storage-based cross-Region replication, typical lag <1 second; secondary Regions read-only; managed switchover/failover in about a minute.",
+      "serviceId": "aurora"
+    },
+    {
+      "id": "fc-database-020",
+      "deck": "database",
+      "front": "Aurora Serverless v2",
+      "back": "Scales in fine-grained ACU increments; supports scale to 0 ACUs with auto-pause; can mix with provisioned instances.",
+      "serviceId": "aurora"
+    },
+    {
+      "id": "fc-database-021",
+      "deck": "database",
+      "front": "Aurora DSQL",
+      "back": "Serverless, distributed, PostgreSQL-compatible SQL with active-active multi-Region and strong consistency; 99.99% single-Region, 99.999% multi-Region availability design. GA May 2025.",
+      "serviceId": "aurora-dsql"
+    },
+    {
+      "id": "fc-database-022",
+      "deck": "database",
+      "front": "Aurora zero-ETL to Redshift",
+      "back": "Near real-time replication of Aurora (and RDS, DynamoDB) data into Redshift without pipelines.",
+      "serviceId": "aurora"
+    },
+    {
+      "id": "fc-database-023",
+      "deck": "database",
+      "front": "Aurora Backtrack",
+      "back": "Rewinds an Aurora MySQL cluster to a prior point in time without restoring from backup.",
+      "serviceId": "aurora"
+    },
+    {
+      "id": "fc-database-024",
+      "deck": "database",
+      "front": "ElastiCache engines",
+      "back": "Valkey (recommended, lower cost), Redis OSS, and Memcached. Serverless option available for Valkey/Redis OSS/Memcached.",
+      "serviceId": "elasticache"
+    },
+    {
+      "id": "fc-database-025",
+      "deck": "database",
+      "front": "ElastiCache Memcached vs Valkey/Redis",
+      "back": "Memcached: multithreaded, no replication/persistence. Valkey/Redis: replication, Multi-AZ failover, persistence, rich data structures, pub/sub.",
+      "serviceId": "elasticache"
+    },
+    {
+      "id": "fc-database-026",
+      "deck": "database",
+      "front": "MemoryDB",
+      "back": "Durable Redis/Valkey-compatible in-memory database with a multi-AZ transaction log; can be a primary database.",
+      "serviceId": "memorydb"
+    },
+    {
+      "id": "fc-database-027",
+      "deck": "database",
+      "front": "Cache-aside vs write-through",
+      "back": "Cache-aside: app reads cache, loads from DB on miss (lazy). Write-through: app writes cache and DB together; fresher but more writes.",
+      "serviceId": "elasticache"
+    },
+    {
+      "id": "fc-database-028",
+      "deck": "database",
+      "front": "DocumentDB",
+      "back": "MongoDB-compatible JSON document database with storage similar to Aurora; elastic clusters for sharding.",
+      "serviceId": "documentdb"
+    },
+    {
+      "id": "fc-database-029",
+      "deck": "database",
+      "front": "Neptune",
+      "back": "Managed graph database supporting Gremlin, openCypher, and SPARQL; Neptune Analytics for in-memory graph analytics.",
+      "serviceId": "neptune"
+    },
+    {
+      "id": "fc-database-030",
+      "deck": "database",
+      "front": "Keyspaces",
+      "back": "Serverless, Apache Cassandra (CQL)-compatible wide-column database.",
+      "serviceId": "keyspaces"
+    },
+    {
+      "id": "fc-database-031",
+      "deck": "database",
+      "front": "Timestream",
+      "back": "Purpose-built time-series database: Timestream for LiveAnalytics and Timestream for InfluxDB.",
+      "serviceId": "timestream"
+    },
+    {
+      "id": "fc-database-032",
+      "deck": "database",
+      "front": "Redshift RA3 nodes",
+      "back": "Separate compute and managed storage (S3-backed); scale compute independently; enables data sharing.",
+      "serviceId": "redshift"
+    },
+    {
+      "id": "fc-database-033",
+      "deck": "database",
+      "front": "Redshift Serverless",
+      "back": "Pay per RPU-second for compute; auto-scales; no cluster management.",
+      "serviceId": "redshift"
+    },
+    {
+      "id": "fc-database-034",
+      "deck": "database",
+      "front": "Redshift Spectrum",
+      "back": "Query data in S3 directly from Redshift using external tables.",
+      "serviceId": "redshift"
+    },
+    {
+      "id": "fc-database-035",
+      "deck": "database",
+      "front": "Redshift concurrency scaling",
+      "back": "Adds transient cluster capacity for bursts of concurrent read (and some write) queries; free credits accrue daily.",
+      "serviceId": "redshift"
+    },
+    {
+      "id": "fc-database-036",
+      "deck": "database",
+      "front": "OLTP vs OLAP",
+      "back": "OLTP: many small transactional reads/writes (RDS, Aurora, DynamoDB). OLAP: large analytical scans/aggregations (Redshift, Athena).",
+      "serviceId": "redshift"
+    },
+    {
+      "id": "fc-database-037",
+      "deck": "database",
+      "front": "QLDB status",
+      "back": "Amazon QLDB reached end of support on July 31, 2025; AWS recommends Aurora PostgreSQL for ledger-style use cases.",
+      "serviceId": "aurora"
+    },
+    {
+      "id": "fc-database-038",
+      "deck": "database",
+      "front": "Database Savings Plans",
+      "back": "Launched Dec 2025: up to 35% savings with 1-year, no-upfront commitment across Aurora, RDS, DynamoDB, ElastiCache, DocumentDB, Neptune, Keyspaces, Timestream, DMS (OpenSearch added 2026).",
+      "serviceId": "savings-plans"
+    },
+    {
+      "id": "fc-database-039",
+      "deck": "database",
+      "front": "Aurora PostgreSQL Limitless Database",
+      "back": "Horizontal write scaling via managed sharded tables within an Aurora PostgreSQL cluster.",
+      "serviceId": "aurora"
+    },
+    {
+      "id": "fc-database-040",
+      "deck": "database",
+      "front": "Babelfish for Aurora PostgreSQL",
+      "back": "Lets Aurora PostgreSQL understand T-SQL and the SQL Server wire protocol to ease SQL Server migrations.",
+      "serviceId": "aurora"
+    },
+    {
+      "id": "fc-compute-001",
+      "deck": "compute",
+      "front": "Lambda maximum timeout",
+      "back": "15 minutes (900 seconds).",
+      "serviceId": "lambda"
+    },
+    {
+      "id": "fc-compute-002",
+      "deck": "compute",
+      "front": "Lambda memory range",
+      "back": "128 MB to 10,240 MB; CPU scales proportionally (up to 6 vCPUs).",
+      "serviceId": "lambda"
+    },
+    {
+      "id": "fc-compute-003",
+      "deck": "compute",
+      "front": "Lambda ephemeral storage (/tmp)",
+      "back": "Configurable 512 MB to 10,240 MB.",
+      "serviceId": "lambda"
+    },
+    {
+      "id": "fc-compute-004",
+      "deck": "compute",
+      "front": "Lambda deployment package limits",
+      "back": "50 MB zipped direct upload, 250 MB unzipped (including layers); container images up to 10 GB.",
+      "serviceId": "lambda"
+    },
+    {
+      "id": "fc-compute-005",
+      "deck": "compute",
+      "front": "Lambda synchronous payload limit",
+      "back": "6 MB request and response (response streaming supports larger responses).",
+      "serviceId": "lambda"
+    },
+    {
+      "id": "fc-compute-006",
+      "deck": "compute",
+      "front": "Lambda asynchronous payload limit (Oct 2025)",
+      "back": "1 MB (raised from 256 KB); billed 1 request per first 256 KB plus 1 per additional 64 KB chunk.",
+      "serviceId": "lambda"
+    },
+    {
+      "id": "fc-compute-007",
+      "deck": "compute",
+      "front": "Lambda default concurrency quota",
+      "back": "1,000 concurrent executions per Region (soft limit, can be raised).",
+      "serviceId": "lambda"
+    },
+    {
+      "id": "fc-compute-008",
+      "deck": "compute",
+      "front": "Reserved vs provisioned concurrency",
+      "back": "Reserved: guarantees and caps concurrency for a function (no cost). Provisioned: keeps environments pre-initialized to remove cold starts (extra cost).",
+      "serviceId": "lambda"
+    },
+    {
+      "id": "fc-compute-009",
+      "deck": "compute",
+      "front": "Lambda SnapStart",
+      "back": "Snapshots the initialized execution environment to cut cold starts; supports Java, Python, and .NET.",
+      "serviceId": "lambda"
+    },
+    {
+      "id": "fc-compute-010",
+      "deck": "compute",
+      "front": "Lambda durable functions (re:Invent 2025)",
+      "back": "Checkpoint-and-replay programming model for multi-step workflows; waits suspend without compute charges for up to one year.",
+      "serviceId": "lambda"
+    },
+    {
+      "id": "fc-compute-011",
+      "deck": "compute",
+      "front": "Lambda Managed Instances (re:Invent 2025)",
+      "back": "Run Lambda functions on EC2 capacity providers; pay EC2 price + 15% management fee + requests; multi-concurrency; works with Savings Plans/RIs.",
+      "serviceId": "lambda"
+    },
+    {
+      "id": "fc-compute-012",
+      "deck": "compute",
+      "front": "Lambda async retry behavior",
+      "back": "Two retries by default for async invocations; configure DLQ or on-failure destinations; event age up to 6 hours.",
+      "serviceId": "lambda"
+    },
+    {
+      "id": "fc-compute-013",
+      "deck": "compute",
+      "front": "EC2 purchasing options",
+      "back": "On-Demand, Savings Plans, Reserved Instances, Spot (up to 90% off), Dedicated Hosts, Dedicated Instances, Capacity Reservations.",
+      "serviceId": "ec2"
+    },
+    {
+      "id": "fc-compute-014",
+      "deck": "compute",
+      "front": "Spot interruption notice",
+      "back": "2-minute warning via instance metadata and EventBridge; rebalance recommendations may arrive earlier.",
+      "serviceId": "ec2"
+    },
+    {
+      "id": "fc-compute-015",
+      "deck": "compute",
+      "front": "Spot allocation strategy recommendation",
+      "back": "price-capacity-optimized: chooses pools with lowest interruption risk and low price; diversify instance types and AZs.",
+      "serviceId": "ec2"
+    },
+    {
+      "id": "fc-compute-016",
+      "deck": "compute",
+      "front": "Placement groups",
+      "back": "Cluster: low latency in one AZ. Spread: distinct hardware, max 7 running instances per AZ per group. Partition: separate racks for large distributed systems (HDFS, Cassandra).",
+      "serviceId": "ec2"
+    },
+    {
+      "id": "fc-compute-017",
+      "deck": "compute",
+      "front": "EC2 instance families",
+      "back": "M general, C compute, R/X memory, I/D storage, P/G/Trn/Inf accelerated, T burstable, Hpc HPC.",
+      "serviceId": "ec2"
+    },
+    {
+      "id": "fc-compute-018",
+      "deck": "compute",
+      "front": "Graviton",
+      "back": "AWS-designed ARM64 CPUs offering the best price performance for many workloads; Graviton5 announced re:Invent 2025.",
+      "serviceId": "ec2"
+    },
+    {
+      "id": "fc-compute-019",
+      "deck": "compute",
+      "front": "IMDSv2",
+      "back": "Session-oriented instance metadata service requiring a PUT token; mitigates SSRF credential theft. Enforce with HttpTokens=required.",
+      "serviceId": "ec2"
+    },
+    {
+      "id": "fc-compute-020",
+      "deck": "compute",
+      "front": "EC2 hibernation",
+      "back": "Saves RAM to the encrypted EBS root volume so instances resume quickly; max 60 days.",
+      "serviceId": "ec2"
+    },
+    {
+      "id": "fc-compute-021",
+      "deck": "compute",
+      "front": "EC2 automatic recovery",
+      "back": "Moves an impaired instance to new hardware keeping instance ID, private IPs, EIPs, and EBS data; enabled by default on supported types.",
+      "serviceId": "ec2"
+    },
+    {
+      "id": "fc-compute-022",
+      "deck": "compute",
+      "front": "Auto Scaling policy types",
+      "back": "Target tracking, step, simple, scheduled, and predictive scaling.",
+      "serviceId": "ec2-auto-scaling"
+    },
+    {
+      "id": "fc-compute-023",
+      "deck": "compute",
+      "front": "Auto Scaling health check types",
+      "back": "EC2 status checks (default) and ELB health checks (recommended with load balancers); health check grace period delays evaluation.",
+      "serviceId": "ec2-auto-scaling"
+    },
+    {
+      "id": "fc-compute-024",
+      "deck": "compute",
+      "front": "Auto Scaling warm pools",
+      "back": "Pre-initialized stopped/hibernated instances that reduce scale-out latency for apps with long boot times.",
+      "serviceId": "ec2-auto-scaling"
+    },
+    {
+      "id": "fc-compute-025",
+      "deck": "compute",
+      "front": "Auto Scaling lifecycle hooks",
+      "back": "Pause instances in Pending:Wait or Terminating:Wait to run custom actions (e.g., bootstrap, drain logs).",
+      "serviceId": "ec2-auto-scaling"
+    },
+    {
+      "id": "fc-compute-026",
+      "deck": "compute",
+      "front": "Elastic Beanstalk",
+      "back": "PaaS that provisions EC2, ASG, ELB for web apps; you keep control of resources; deployment policies incl. immutable and blue/green (swap URL).",
+      "serviceId": "elastic-beanstalk"
+    },
+    {
+      "id": "fc-compute-027",
+      "deck": "compute",
+      "front": "Lightsail",
+      "back": "Simple VPS bundles with fixed monthly pricing for small apps and websites.",
+      "serviceId": "lightsail"
+    },
+    {
+      "id": "fc-compute-028",
+      "deck": "compute",
+      "front": "AWS Batch",
+      "back": "Managed batch job scheduling on EC2, Spot, Fargate, or EKS with job queues, priorities, and dependencies.",
+      "serviceId": "batch"
+    },
+    {
+      "id": "fc-compute-029",
+      "deck": "compute",
+      "front": "AWS Outposts",
+      "back": "AWS-managed racks/servers on premises running AWS services and APIs; the recommended edge compute option after Snowball Edge closed to new customers.",
+      "serviceId": "outposts"
+    },
+    {
+      "id": "fc-compute-030",
+      "deck": "compute",
+      "front": "Local Zones vs Wavelength",
+      "back": "Local Zones: AWS infrastructure in metro areas for single-digit ms latency. Wavelength: AWS compute inside telecom 5G networks.",
+      "serviceId": "local-zones"
+    },
+    {
+      "id": "fc-compute-031",
+      "deck": "compute",
+      "front": "App Runner status (2026)",
+      "back": "App Runner stopped accepting new customers on April 30, 2026; AWS recommends Amazon ECS Express Mode.",
+      "serviceId": "app-runner"
+    },
+    {
+      "id": "fc-compute-032",
+      "deck": "compute",
+      "front": "EC2 X8aedz (re:Invent 2025)",
+      "back": "Memory-optimized instances with 5 GHz CPUs and up to 3 TiB memory for EDA and databases.",
+      "serviceId": "ec2"
+    },
+    {
+      "id": "fc-compute-033",
+      "deck": "compute",
+      "front": "Trainium3 / Trn3 UltraServers",
+      "back": "AWS first 3 nm AI chip for training and inference, announced re:Invent 2025.",
+      "serviceId": "ec2"
+    },
+    {
+      "id": "fc-compute-034",
+      "deck": "compute",
+      "front": "Dedicated Host vs Dedicated Instance",
+      "back": "Dedicated Host: a whole physical server with socket/core visibility for BYOL. Dedicated Instance: single-tenant hardware without host-level control.",
+      "serviceId": "ec2"
+    },
+    {
+      "id": "fc-compute-035",
+      "deck": "compute",
+      "front": "EC2 On-Demand Capacity Reservations",
+      "back": "Reserve capacity in a specific AZ with no term commitment; billed at On-Demand rate whether used or not.",
+      "serviceId": "ec2"
+    },
+    {
+      "id": "fc-containers-001",
+      "deck": "containers",
+      "front": "ECS launch types",
+      "back": "EC2 (you manage instances), Fargate (serverless), and ECS Managed Instances; capacity providers mix them.",
+      "serviceId": "ecs"
+    },
+    {
+      "id": "fc-containers-002",
+      "deck": "containers",
+      "front": "ECS Express Mode (Nov 2025)",
+      "back": "Deploys a container image as a Fargate service with ALB, TLS, AWS-provided URL, and auto scaling; up to 25 services share one ALB; no extra charge.",
+      "serviceId": "ecs"
+    },
+    {
+      "id": "fc-containers-003",
+      "deck": "containers",
+      "front": "ECS task role vs task execution role",
+      "back": "Task role: permissions for the application code. Execution role: permissions for ECS agent to pull images and write logs.",
+      "serviceId": "ecs"
+    },
+    {
+      "id": "fc-containers-004",
+      "deck": "containers",
+      "front": "ECS deployment options",
+      "back": "Rolling update (minimumHealthyPercent/maximumPercent), native blue/green (2025), and external/CodeDeploy; deployment circuit breaker with rollback.",
+      "serviceId": "ecs"
+    },
+    {
+      "id": "fc-containers-005",
+      "deck": "containers",
+      "front": "ECS auto scaling high-resolution metrics (2026)",
+      "back": "Service auto scaling can use 20-second metrics, improving scale-out time ~76% (Summit NY 2026).",
+      "serviceId": "ecs"
+    },
+    {
+      "id": "fc-containers-006",
+      "deck": "containers",
+      "front": "Fargate limits",
+      "back": "Up to 16 vCPU and 120 GB memory per task; ephemeral storage up to 200 GiB; no DaemonSets or privileged containers.",
+      "serviceId": "fargate"
+    },
+    {
+      "id": "fc-containers-007",
+      "deck": "containers",
+      "front": "Fargate Spot",
+      "back": "Run interruption-tolerant Fargate tasks at up to 70% discount with a 2-minute warning.",
+      "serviceId": "fargate"
+    },
+    {
+      "id": "fc-containers-008",
+      "deck": "containers",
+      "front": "EKS Auto Mode",
+      "back": "AWS manages node provisioning (Karpenter-based), patching, load balancing, storage, networking, and DNS as core components.",
+      "serviceId": "eks"
+    },
+    {
+      "id": "fc-containers-009",
+      "deck": "containers",
+      "front": "EKS Pod Identity vs IRSA",
+      "back": "Both map Kubernetes service accounts to IAM roles. Pod Identity is simpler (no OIDC provider setup per cluster); IRSA uses OIDC federation.",
+      "serviceId": "eks"
+    },
+    {
+      "id": "fc-containers-010",
+      "deck": "containers",
+      "front": "Karpenter",
+      "back": "Open-source node autoscaler that provisions right-sized nodes quickly and consolidates underutilized nodes.",
+      "serviceId": "eks"
+    },
+    {
+      "id": "fc-containers-011",
+      "deck": "containers",
+      "front": "EKS Capabilities (re:Invent 2025)",
+      "back": "Fully managed platform features for workload orchestration and cloud resource management (e.g., Argo CD, ACK, kro) running in AWS-owned infrastructure.",
+      "serviceId": "eks"
+    },
+    {
+      "id": "fc-containers-012",
+      "deck": "containers",
+      "front": "AWS Controllers for Kubernetes (ACK)",
+      "back": "Manage AWS resources (S3, RDS, IAM) via Kubernetes custom resources.",
+      "serviceId": "eks"
+    },
+    {
+      "id": "fc-containers-013",
+      "deck": "containers",
+      "front": "ECR features",
+      "back": "Private/public registries, image scanning (Inspector enhanced), cross-Region/cross-account replication, lifecycle policies, pull-through cache.",
+      "serviceId": "ecr"
+    },
+    {
+      "id": "fc-containers-014",
+      "deck": "containers",
+      "front": "ECS vs EKS",
+      "back": "ECS: AWS-native, simpler, deep AWS integration. EKS: upstream Kubernetes, portability, ecosystem, more operational surface.",
+      "serviceId": "ecs"
+    },
+    {
+      "id": "fc-containers-015",
+      "deck": "containers",
+      "front": "ECS service discovery options",
+      "back": "ECS Service Connect (Cloud Map-based with proxy), Cloud Map DNS, or VPC Lattice.",
+      "serviceId": "ecs"
+    },
+    {
+      "id": "fc-containers-016",
+      "deck": "containers",
+      "front": "Container image max for Lambda",
+      "back": "10 GB.",
+      "serviceId": "lambda"
+    },
+    {
+      "id": "fc-containers-017",
+      "deck": "containers",
+      "front": "EKS control plane",
+      "back": "AWS-managed, runs across multiple AZs; billed per cluster-hour; extended support costs more for older Kubernetes versions.",
+      "serviceId": "eks"
+    },
+    {
+      "id": "fc-containers-018",
+      "deck": "containers",
+      "front": "Fargate vs EC2 launch type choice",
+      "back": "Fargate: no server management, per-task billing. EC2: GPUs, custom AMIs, daemon workloads, and potentially lower cost at high utilization.",
+      "serviceId": "fargate"
+    },
+    {
+      "id": "fc-containers-019",
+      "deck": "containers",
+      "front": "ECS Exec",
+      "back": "Run commands or open a shell in running containers via Systems Manager, audited in CloudTrail.",
+      "serviceId": "ecs"
+    },
+    {
+      "id": "fc-containers-020",
+      "deck": "containers",
+      "front": "Bottlerocket",
+      "back": "AWS container-optimized Linux OS with image-based atomic updates; used for EKS/ECS nodes.",
+      "serviceId": "eks"
+    },
+    {
+      "id": "fc-networking-001",
+      "deck": "networking",
+      "front": "VPC CIDR size range",
+      "back": "IPv4 CIDR from /16 (65,536 addresses) to /28 (16 addresses); up to 5 CIDRs per VPC by default (adjustable).",
+      "serviceId": "vpc"
+    },
+    {
+      "id": "fc-networking-002",
+      "deck": "networking",
+      "front": "Reserved IPs per subnet",
+      "back": "5: network address, VPC router (.1), DNS (.2), future use (.3), and broadcast (last).",
+      "serviceId": "vpc"
+    },
+    {
+      "id": "fc-networking-003",
+      "deck": "networking",
+      "front": "Security group vs NACL",
+      "back": "SG: stateful, allow-only, ENI-level, all rules evaluated. NACL: stateless, allow and deny, subnet-level, rules evaluated in number order.",
+      "serviceId": "vpc"
+    },
+    {
+      "id": "fc-networking-004",
+      "deck": "networking",
+      "front": "NAT gateway (zonal)",
+      "back": "Managed, AZ-scoped outbound IPv4 NAT in a public subnet; scales to 100 Gbps; deploy one per AZ; charged per hour and per GB processed.",
+      "serviceId": "vpc"
+    },
+    {
+      "id": "fc-networking-005",
+      "deck": "networking",
+      "front": "Regional NAT gateway (Nov 2025)",
+      "back": "NAT gateway in regional availability mode: one gateway that automatically expands/contracts across AZs, needs no public subnet, up to 32 IPs per AZ.",
+      "serviceId": "vpc"
+    },
+    {
+      "id": "fc-networking-006",
+      "deck": "networking",
+      "front": "Egress-only internet gateway",
+      "back": "Outbound-only IPv6 internet access (IPv6 equivalent of NAT).",
+      "serviceId": "vpc"
+    },
+    {
+      "id": "fc-networking-007",
+      "deck": "networking",
+      "front": "Gateway vs interface VPC endpoints",
+      "back": "Gateway: S3 and DynamoDB only, route-table based, free. Interface (PrivateLink): ENIs with private IPs for most services, hourly + per-GB cost.",
+      "serviceId": "vpc"
+    },
+    {
+      "id": "fc-networking-008",
+      "deck": "networking",
+      "front": "VPC peering properties",
+      "back": "Non-transitive, no overlapping CIDRs, works cross-account and cross-Region, no edge-to-edge routing.",
+      "serviceId": "vpc"
+    },
+    {
+      "id": "fc-networking-009",
+      "deck": "networking",
+      "front": "Transit Gateway",
+      "back": "Regional hub for thousands of VPC/VPN/DX attachments with transitive routing and multiple route tables for segmentation; inter-Region peering supported.",
+      "serviceId": "transit-gateway"
+    },
+    {
+      "id": "fc-networking-010",
+      "deck": "networking",
+      "front": "Transit Gateway appliance mode",
+      "back": "Keeps traffic flows symmetric through the same AZ appliance in an inspection VPC.",
+      "serviceId": "transit-gateway"
+    },
+    {
+      "id": "fc-networking-011",
+      "deck": "networking",
+      "front": "Cloud WAN",
+      "back": "Managed global WAN with a central core network policy, segments, and automatic routing across Regions and on-premises.",
+      "serviceId": "cloud-wan"
+    },
+    {
+      "id": "fc-networking-012",
+      "deck": "networking",
+      "front": "PrivateLink",
+      "back": "Expose a service behind an NLB (or GWLB) to consumer VPCs via interface endpoints; one-way, overlapping CIDRs OK.",
+      "serviceId": "privatelink"
+    },
+    {
+      "id": "fc-networking-013",
+      "deck": "networking",
+      "front": "VPC Lattice",
+      "back": "Application-layer service networking across VPCs/accounts with IAM auth policies; works with overlapping CIDRs; supports EC2, ECS, EKS, Lambda.",
+      "serviceId": "vpc-lattice"
+    },
+    {
+      "id": "fc-networking-014",
+      "deck": "networking",
+      "front": "Direct Connect port speeds",
+      "back": "Dedicated: 1, 10, 100, 400 Gbps. Hosted connections from partners: 50 Mbps up to 25 Gbps.",
+      "serviceId": "direct-connect"
+    },
+    {
+      "id": "fc-networking-015",
+      "deck": "networking",
+      "front": "Direct Connect VIF types",
+      "back": "Private VIF (to VGW/DX gateway), Public VIF (AWS public endpoints), Transit VIF (to Transit Gateway via DX gateway).",
+      "serviceId": "direct-connect"
+    },
+    {
+      "id": "fc-networking-016",
+      "deck": "networking",
+      "front": "Direct Connect encryption",
+      "back": "Not encrypted by default; use MACsec (layer 2, on supported 10/100/400 Gbps ports) or IPsec VPN over DX.",
+      "serviceId": "direct-connect"
+    },
+    {
+      "id": "fc-networking-017",
+      "deck": "networking",
+      "front": "Direct Connect gateway",
+      "back": "Global object that connects DX VIFs to VGWs or TGWs in multiple Regions.",
+      "serviceId": "direct-connect"
+    },
+    {
+      "id": "fc-networking-018",
+      "deck": "networking",
+      "front": "Site-to-Site VPN",
+      "back": "Two IPsec tunnels per connection for redundancy; ~1.25 Gbps per tunnel (large-bandwidth tunnels up to 5 Gbps on TGW/Cloud WAN); use ECMP on TGW to aggregate.",
+      "serviceId": "site-to-site-vpn"
+    },
+    {
+      "id": "fc-networking-019",
+      "deck": "networking",
+      "front": "Client VPN",
+      "back": "Managed OpenVPN-based remote access for users into VPCs.",
+      "serviceId": "site-to-site-vpn"
+    },
+    {
+      "id": "fc-networking-020",
+      "deck": "networking",
+      "front": "ELB types",
+      "back": "ALB (L7 HTTP/HTTPS/gRPC), NLB (L4 TCP/UDP/TLS, static IPs), GWLB (L3 appliances via GENEVE), CLB (legacy).",
+      "serviceId": "elb"
+    },
+    {
+      "id": "fc-networking-021",
+      "deck": "networking",
+      "front": "ALB routing features",
+      "back": "Path, host, header, query-string, and source-IP routing; weighted target groups; Lambda targets; OIDC/Cognito authentication.",
+      "serviceId": "elb"
+    },
+    {
+      "id": "fc-networking-022",
+      "deck": "networking",
+      "front": "NLB features",
+      "back": "Millions of requests/s, ultra-low latency, one static IP/EIP per AZ, preserves source IP, can be a PrivateLink endpoint service.",
+      "serviceId": "elb"
+    },
+    {
+      "id": "fc-networking-023",
+      "deck": "networking",
+      "front": "Cross-zone load balancing defaults",
+      "back": "ALB: on by default. NLB/GWLB: off by default (inter-AZ data charges apply when enabled).",
+      "serviceId": "elb"
+    },
+    {
+      "id": "fc-networking-024",
+      "deck": "networking",
+      "front": "Route 53 routing policies",
+      "back": "Simple, weighted, latency, failover, geolocation, geoproximity, multivalue answer, IP-based.",
+      "serviceId": "route53"
+    },
+    {
+      "id": "fc-networking-025",
+      "deck": "networking",
+      "front": "Route 53 alias records",
+      "back": "Map names (including zone apex) to AWS resources such as ELB, CloudFront, S3 websites; free queries for AWS targets.",
+      "serviceId": "route53"
+    },
+    {
+      "id": "fc-networking-026",
+      "deck": "networking",
+      "front": "Route 53 Resolver endpoints",
+      "back": "Inbound: on-premises resolves VPC names. Outbound: VPC forwards queries to on-premises DNS via rules.",
+      "serviceId": "route53"
+    },
+    {
+      "id": "fc-networking-027",
+      "deck": "networking",
+      "front": "Route 53 Global Resolver (preview, re:Invent 2025)",
+      "back": "Anycast DNS service resolving public and private domains globally for clients anywhere.",
+      "serviceId": "route53"
+    },
+    {
+      "id": "fc-networking-028",
+      "deck": "networking",
+      "front": "Route 53 ARC",
+      "back": "Application Recovery Controller: routing controls (data-plane failover switches), readiness checks, zonal shift and zonal autoshift.",
+      "serviceId": "route53"
+    },
+    {
+      "id": "fc-networking-029",
+      "deck": "networking",
+      "front": "CloudFront edge network",
+      "back": "Hundreds of points of presence plus Regional edge caches; origins include S3, ALB, EC2, API Gateway, any HTTP server.",
+      "serviceId": "cloudfront"
+    },
+    {
+      "id": "fc-networking-030",
+      "deck": "networking",
+      "front": "CloudFront OAC",
+      "back": "Origin Access Control: the recommended way to keep S3 origins private; supports SSE-KMS and all Regions (replaces OAI).",
+      "serviceId": "cloudfront"
+    },
+    {
+      "id": "fc-networking-031",
+      "deck": "networking",
+      "front": "CloudFront Functions vs Lambda@Edge",
+      "back": "CloudFront Functions: lightweight JS at viewer events, sub-ms. Lambda@Edge: Node/Python, viewer and origin events, network access, longer runtime.",
+      "serviceId": "cloudfront"
+    },
+    {
+      "id": "fc-networking-032",
+      "deck": "networking",
+      "front": "CloudFront flat-rate plans (Nov 2025)",
+      "back": "Free $0, Pro $15, Business $200, Premium $1,000/month; bundle CDN, WAF, DDoS protection, Route 53 DNS, logs, S3 credits; no overage charges.",
+      "serviceId": "cloudfront"
+    },
+    {
+      "id": "fc-networking-033",
+      "deck": "networking",
+      "front": "CloudFront origin failover",
+      "back": "Origin groups with primary/secondary origins; fail over on configured status codes or timeouts (GET/HEAD/OPTIONS).",
+      "serviceId": "cloudfront"
+    },
+    {
+      "id": "fc-networking-034",
+      "deck": "networking",
+      "front": "Global Accelerator",
+      "back": "Two static anycast IPv4 IPs, routes TCP/UDP over the AWS backbone to healthy Regional endpoints; fast failover without DNS TTL issues.",
+      "serviceId": "global-accelerator"
+    },
+    {
+      "id": "fc-networking-035",
+      "deck": "networking",
+      "front": "CloudFront vs Global Accelerator",
+      "back": "CloudFront: HTTP(S) caching and edge compute. Global Accelerator: static IPs, TCP/UDP, non-HTTP, deterministic failover, no caching.",
+      "serviceId": "global-accelerator"
+    },
+    {
+      "id": "fc-networking-036",
+      "deck": "networking",
+      "front": "Public IPv4 address pricing",
+      "back": "Since Feb 1, 2024, AWS charges per hour for every public IPv4 address (in use or idle) — a driver for IPv6 adoption.",
+      "serviceId": "vpc"
+    },
+    {
+      "id": "fc-security-001",
+      "deck": "security",
+      "front": "IAM policy evaluation logic",
+      "back": "Explicit Deny > explicit Allow > implicit deny. Within an account, an Allow in identity OR resource policy suffices (subject to SCPs, RCPs, boundaries, session policies).",
+      "serviceId": "iam"
+    },
+    {
+      "id": "fc-security-002",
+      "deck": "security",
+      "front": "IAM policy types",
+      "back": "Identity-based, resource-based, permissions boundaries, SCPs, RCPs, session policies, ACLs.",
+      "serviceId": "iam"
+    },
+    {
+      "id": "fc-security-003",
+      "deck": "security",
+      "front": "Permissions boundary",
+      "back": "Managed policy that caps the maximum permissions an IAM user/role can have; does not grant permissions itself.",
+      "serviceId": "iam"
+    },
+    {
+      "id": "fc-security-004",
+      "deck": "security",
+      "front": "SCP",
+      "back": "Service control policy: Organizations guardrail limiting max permissions for all principals (including root) in member accounts; does not affect the management account.",
+      "serviceId": "organizations"
+    },
+    {
+      "id": "fc-security-005",
+      "deck": "security",
+      "front": "RCP",
+      "back": "Resource control policy (Nov 2024): Organizations policy limiting max permissions on resources (S3, KMS, STS, SQS, Secrets Manager, etc.), including for external principals.",
+      "serviceId": "organizations"
+    },
+    {
+      "id": "fc-security-006",
+      "deck": "security",
+      "front": "ABAC",
+      "back": "Attribute-based access control: policies compare aws:PrincipalTag to aws:ResourceTag so one policy scales across projects.",
+      "serviceId": "iam"
+    },
+    {
+      "id": "fc-security-007",
+      "deck": "security",
+      "front": "External ID",
+      "back": "sts:ExternalId condition in a role trust policy to prevent the confused-deputy problem with third parties.",
+      "serviceId": "iam"
+    },
+    {
+      "id": "fc-security-008",
+      "deck": "security",
+      "front": "IAM Access Analyzer",
+      "back": "Finds resources shared externally, unused access (roles, keys, permissions), validates policies, and generates policies from CloudTrail activity.",
+      "serviceId": "iam"
+    },
+    {
+      "id": "fc-security-009",
+      "deck": "security",
+      "front": "IAM Identity Center",
+      "back": "Workforce SSO to AWS accounts and SAML apps using permission sets; integrates with Entra ID, Okta, AD via SAML/SCIM.",
+      "serviceId": "iam-identity-center"
+    },
+    {
+      "id": "fc-security-010",
+      "deck": "security",
+      "front": "Cognito user pool vs identity pool",
+      "back": "User pool: user directory and authentication (JWT tokens). Identity pool: exchanges identities for temporary AWS credentials.",
+      "serviceId": "cognito"
+    },
+    {
+      "id": "fc-security-011",
+      "deck": "security",
+      "front": "AWS Organizations features",
+      "back": "Consolidated billing, OUs, SCPs, RCPs, tag/backup/AI opt-out policies, delegated administrators, centralized root access management.",
+      "serviceId": "organizations"
+    },
+    {
+      "id": "fc-security-012",
+      "deck": "security",
+      "front": "Control Tower",
+      "back": "Sets up a governed landing zone: account factory, preventive/detective/proactive controls, centralized logging, drift detection.",
+      "serviceId": "control-tower"
+    },
+    {
+      "id": "fc-security-013",
+      "deck": "security",
+      "front": "KMS key types",
+      "back": "AWS owned, AWS managed (aws/service, auto-rotated yearly), customer managed (your policy, optional rotation 90–2560 days, on-demand rotation).",
+      "serviceId": "kms"
+    },
+    {
+      "id": "fc-security-014",
+      "deck": "security",
+      "front": "KMS envelope encryption",
+      "back": "KMS encrypts a data key; the data key encrypts data locally. GenerateDataKey returns plaintext + encrypted copies.",
+      "serviceId": "kms"
+    },
+    {
+      "id": "fc-security-015",
+      "deck": "security",
+      "front": "KMS request payload limit",
+      "back": "Encrypt API directly handles up to 4 KB of data; larger data uses envelope encryption.",
+      "serviceId": "kms"
+    },
+    {
+      "id": "fc-security-016",
+      "deck": "security",
+      "front": "KMS multi-Region keys",
+      "back": "Interoperable keys with the same key ID/material in multiple Regions for cross-Region decryption without re-encrypt calls.",
+      "serviceId": "kms"
+    },
+    {
+      "id": "fc-security-017",
+      "deck": "security",
+      "front": "KMS External Key Store (XKS)",
+      "back": "Key material stays in your external HSM/key manager outside AWS.",
+      "serviceId": "kms"
+    },
+    {
+      "id": "fc-security-018",
+      "deck": "security",
+      "front": "CloudHSM",
+      "back": "Single-tenant, customer-controlled HSMs (FIPS 140-3 Level 3) in your VPC.",
+      "serviceId": "kms"
+    },
+    {
+      "id": "fc-security-019",
+      "deck": "security",
+      "front": "Secrets Manager vs Parameter Store",
+      "back": "Secrets Manager: native rotation, cross-Region replication, per-secret cost. Parameter Store: config + SecureString, free standard tier, no built-in rotation.",
+      "serviceId": "secrets-manager"
+    },
+    {
+      "id": "fc-security-020",
+      "deck": "security",
+      "front": "ACM",
+      "back": "Free public TLS certificates with automatic renewal for ELB, CloudFront, API Gateway; exportable public certificates option added 2025; Private CA for internal certs.",
+      "serviceId": "acm"
+    },
+    {
+      "id": "fc-security-021",
+      "deck": "security",
+      "front": "CloudFront certificate Region requirement",
+      "back": "ACM certificates for CloudFront must be in us-east-1.",
+      "serviceId": "acm"
+    },
+    {
+      "id": "fc-security-022",
+      "deck": "security",
+      "front": "WAF",
+      "back": "Layer-7 web ACLs for CloudFront, ALB, API Gateway, AppSync, Cognito, App Runner, Verified Access; managed rules, rate-based rules, Bot Control, Fraud Control.",
+      "serviceId": "waf"
+    },
+    {
+      "id": "fc-security-023",
+      "deck": "security",
+      "front": "WAF Bot Control AI monetization (2026)",
+      "back": "Lets content owners price, meter, and collect payment from AI bots (Summit NY 2026).",
+      "serviceId": "waf"
+    },
+    {
+      "id": "fc-security-024",
+      "deck": "security",
+      "front": "Shield Standard vs Advanced",
+      "back": "Standard: free automatic L3/L4 DDoS protection. Advanced: enhanced detection, SRT 24/7, DDoS cost protection, WAF at no extra cost for protected resources.",
+      "serviceId": "shield"
+    },
+    {
+      "id": "fc-security-025",
+      "deck": "security",
+      "front": "GuardDuty",
+      "back": "Threat detection from CloudTrail, VPC Flow Logs, DNS logs, EKS/RDS/Lambda/S3 activity; Extended Threat Detection for multi-stage attacks.",
+      "serviceId": "guardduty"
+    },
+    {
+      "id": "fc-security-026",
+      "deck": "security",
+      "front": "Inspector",
+      "back": "Automated vulnerability management for EC2, ECR images, and Lambda (packages and code); CIS benchmarks.",
+      "serviceId": "inspector"
+    },
+    {
+      "id": "fc-security-027",
+      "deck": "security",
+      "front": "Macie",
+      "back": "Discovers and classifies sensitive data (PII) in S3 using ML and managed identifiers.",
+      "serviceId": "macie"
+    },
+    {
+      "id": "fc-security-028",
+      "deck": "security",
+      "front": "Security Hub (2025 GA version)",
+      "back": "Unified security posture: correlates GuardDuty, Inspector, Macie and CSPM findings with near real-time risk analytics and exposure prioritization.",
+      "serviceId": "security-hub"
+    },
+    {
+      "id": "fc-security-029",
+      "deck": "security",
+      "front": "Detective",
+      "back": "Investigates security findings using behavior graphs built from logs.",
+      "serviceId": "detective"
+    },
+    {
+      "id": "fc-security-030",
+      "deck": "security",
+      "front": "Security Lake",
+      "back": "Centralizes security logs into your S3 in OCSF format (Parquet) across accounts and Regions.",
+      "serviceId": "security-lake"
+    },
+    {
+      "id": "fc-security-031",
+      "deck": "security",
+      "front": "CloudTrail event types",
+      "back": "Management events (on by default, 90-day Event history), data events (object/function-level, extra cost), Insights events, network activity events.",
+      "serviceId": "cloudtrail"
+    },
+    {
+      "id": "fc-security-032",
+      "deck": "security",
+      "front": "CloudTrail log file integrity",
+      "back": "Log file validation uses SHA-256 digest files to detect modification or deletion.",
+      "serviceId": "cloudtrail"
+    },
+    {
+      "id": "fc-security-033",
+      "deck": "security",
+      "front": "AWS Config",
+      "back": "Records resource configurations and relationships over time; evaluates compliance with managed/custom rules and conformance packs.",
+      "serviceId": "config"
+    },
+    {
+      "id": "fc-security-034",
+      "deck": "security",
+      "front": "Verified Access",
+      "back": "Zero-trust, VPN-less access to internal apps evaluating identity and device posture per request.",
+      "serviceId": "verified-access"
+    },
+    {
+      "id": "fc-security-035",
+      "deck": "security",
+      "front": "Network Firewall",
+      "back": "Managed stateful L3–L7 firewall for VPCs with Suricata rules and domain filtering.",
+      "serviceId": "network-firewall"
+    },
+    {
+      "id": "fc-security-036",
+      "deck": "security",
+      "front": "Firewall Manager",
+      "back": "Centrally manage WAF, Shield Advanced, security groups, Network Firewall, and DNS Firewall policies across an organization.",
+      "serviceId": "waf"
+    },
+    {
+      "id": "fc-security-037",
+      "deck": "security",
+      "front": "S3 Object Lock vs Glacier Vault Lock",
+      "back": "Object Lock: WORM per object in S3 buckets. Vault Lock: WORM policy for legacy S3 Glacier vaults (and AWS Backup Vault Lock for backup vaults).",
+      "serviceId": "s3"
+    },
+    {
+      "id": "fc-security-038",
+      "deck": "security",
+      "front": "Root user best practices",
+      "back": "Enable MFA, no access keys, use only for root-only tasks; Organizations centralized root access can remove member-account root credentials.",
+      "serviceId": "iam"
+    },
+    {
+      "id": "fc-security-039",
+      "deck": "security",
+      "front": "AWS Security Agent (preview)",
+      "back": "AI agent for design security reviews, code analysis, STRIDE threat modeling, PR scanning, and contextual penetration testing.",
+      "serviceId": "security-hub"
+    },
+    {
+      "id": "fc-security-040",
+      "deck": "security",
+      "front": "IAM Policy Autopilot (re:Invent 2025)",
+      "back": "Open-source MCP server that analyzes application code to generate valid, least-privilege IAM policies.",
+      "serviceId": "iam"
+    },
+    {
+      "id": "fc-analytics-001",
+      "deck": "analytics",
+      "front": "Athena pricing model",
+      "back": "Pay per TB scanned (or provisioned capacity); reduce with Parquet/ORC, compression, partitioning, and partition projection.",
+      "serviceId": "athena"
+    },
+    {
+      "id": "fc-analytics-002",
+      "deck": "analytics",
+      "front": "Athena federated query",
+      "back": "Query sources beyond S3 (RDS, DynamoDB, on-premises) via Lambda-based connectors.",
+      "serviceId": "athena"
+    },
+    {
+      "id": "fc-analytics-003",
+      "deck": "analytics",
+      "front": "Glue Data Catalog",
+      "back": "Central Hive-compatible metadata store used by Athena, EMR, Redshift Spectrum, and Lake Formation.",
+      "serviceId": "glue"
+    },
+    {
+      "id": "fc-analytics-004",
+      "deck": "analytics",
+      "front": "Glue crawlers",
+      "back": "Scan data stores to infer schemas and create/update tables in the Data Catalog.",
+      "serviceId": "glue"
+    },
+    {
+      "id": "fc-analytics-005",
+      "deck": "analytics",
+      "front": "Glue ETL",
+      "back": "Serverless Spark (and Python shell/Ray) jobs with job bookmarks for incremental processing.",
+      "serviceId": "glue"
+    },
+    {
+      "id": "fc-analytics-006",
+      "deck": "analytics",
+      "front": "EMR deployment options",
+      "back": "EMR on EC2, EMR on EKS, and EMR Serverless.",
+      "serviceId": "emr"
+    },
+    {
+      "id": "fc-analytics-007",
+      "deck": "analytics",
+      "front": "EMR node types",
+      "back": "Primary (master), core (HDFS + tasks), task (compute only; good for Spot).",
+      "serviceId": "emr"
+    },
+    {
+      "id": "fc-analytics-008",
+      "deck": "analytics",
+      "front": "Kinesis Data Streams shard capacity",
+      "back": "Per shard: 1 MB/s or 1,000 records/s in; 2 MB/s out (shared) or 2 MB/s per enhanced fan-out consumer.",
+      "serviceId": "kinesis-data-streams"
+    },
+    {
+      "id": "fc-analytics-009",
+      "deck": "analytics",
+      "front": "Kinesis record size (Oct 2025)",
+      "back": "Up to 10 MiB per record (configurable; default 1 MiB); PutRecords request up to 10 MiB.",
+      "serviceId": "kinesis-data-streams"
+    },
+    {
+      "id": "fc-analytics-010",
+      "deck": "analytics",
+      "front": "Kinesis retention",
+      "back": "Default 24 hours, extendable up to 365 days.",
+      "serviceId": "kinesis-data-streams"
+    },
+    {
+      "id": "fc-analytics-011",
+      "deck": "analytics",
+      "front": "Kinesis on-demand vs provisioned",
+      "back": "On-demand auto-scales shards and bills per GB; provisioned requires shard management and bills per shard-hour.",
+      "serviceId": "kinesis-data-streams"
+    },
+    {
+      "id": "fc-analytics-012",
+      "deck": "analytics",
+      "front": "Data Firehose",
+      "back": "Fully managed delivery to S3, Redshift, OpenSearch, Splunk, HTTP, Iceberg tables; buffering by size/time; transformation with Lambda; format conversion to Parquet/ORC.",
+      "serviceId": "data-firehose"
+    },
+    {
+      "id": "fc-analytics-013",
+      "deck": "analytics",
+      "front": "Kinesis Data Streams vs Firehose",
+      "back": "KDS: real-time, custom consumers, replay, ordering per shard. Firehose: near real-time managed delivery, no consumer code.",
+      "serviceId": "data-firehose"
+    },
+    {
+      "id": "fc-analytics-014",
+      "deck": "analytics",
+      "front": "MSK options",
+      "back": "MSK Provisioned (Standard or Express brokers) and MSK Serverless; MSK Connect for Kafka Connect.",
+      "serviceId": "msk"
+    },
+    {
+      "id": "fc-analytics-015",
+      "deck": "analytics",
+      "front": "OpenSearch Service",
+      "back": "Managed OpenSearch for search, log analytics, and vector search; UltraWarm and cold tiers; Serverless option.",
+      "serviceId": "opensearch"
+    },
+    {
+      "id": "fc-analytics-016",
+      "deck": "analytics",
+      "front": "OpenSearch Serverless next generation (May 2026)",
+      "back": "Search and vector engine that auto-scales 20x faster than its predecessor and provisions in seconds.",
+      "serviceId": "opensearch"
+    },
+    {
+      "id": "fc-analytics-017",
+      "deck": "analytics",
+      "front": "Lake Formation",
+      "back": "Governance for data lakes: fine-grained (column/row/cell) permissions and tag-based access control over the Glue Data Catalog.",
+      "serviceId": "lake-formation"
+    },
+    {
+      "id": "fc-analytics-018",
+      "deck": "analytics",
+      "front": "Amazon Quick (formerly QuickSight)",
+      "back": "Quick Sight BI with SPICE in-memory engine; Amazon Quick adds agentic chat, research, flows, and automation.",
+      "serviceId": "quicksight"
+    },
+    {
+      "id": "fc-analytics-019",
+      "deck": "analytics",
+      "front": "SageMaker Unified Studio",
+      "back": "Single environment for data, analytics, and AI (next-gen SageMaker) spanning EMR, Glue, Athena, Redshift, and Bedrock.",
+      "serviceId": "sagemaker-unified-studio"
+    },
+    {
+      "id": "fc-analytics-020",
+      "deck": "analytics",
+      "front": "Zero-ETL integrations",
+      "back": "Managed replication from Aurora, RDS, DynamoDB, and some SaaS apps into Redshift/SageMaker lakehouse without pipelines.",
+      "serviceId": "redshift"
+    },
+    {
+      "id": "fc-analytics-021",
+      "deck": "analytics",
+      "front": "Columnar formats benefit",
+      "back": "Parquet/ORC store columns together, enabling column pruning and compression for faster, cheaper analytic scans.",
+      "serviceId": "athena"
+    },
+    {
+      "id": "fc-analytics-022",
+      "deck": "analytics",
+      "front": "Apache Iceberg on AWS",
+      "back": "Open table format with ACID, schema evolution, and time travel; supported by Athena, EMR, Glue, Redshift, and S3 Tables.",
+      "serviceId": "s3-tables"
+    },
+    {
+      "id": "fc-ai-ml-001",
+      "deck": "ai-ml",
+      "front": "Amazon Bedrock",
+      "back": "Serverless access to foundation models from Amazon (Nova), Anthropic, Meta, Mistral, OpenAI, and others via a unified API (Converse).",
+      "serviceId": "bedrock"
+    },
+    {
+      "id": "fc-ai-ml-002",
+      "deck": "ai-ml",
+      "front": "Bedrock Knowledge Bases",
+      "back": "Managed RAG: ingestion, chunking, embeddings, vector store (OpenSearch Serverless, S3 Vectors, Aurora pgvector, etc.), retrieval with citations.",
+      "serviceId": "bedrock"
+    },
+    {
+      "id": "fc-ai-ml-003",
+      "deck": "ai-ml",
+      "front": "Bedrock Managed Knowledge Base (2026)",
+      "back": "Enterprise RAG pipelines with native data connectors and Smart Parsing (GA Summit NY 2026).",
+      "serviceId": "bedrock"
+    },
+    {
+      "id": "fc-ai-ml-004",
+      "deck": "ai-ml",
+      "front": "Bedrock Guardrails policies",
+      "back": "Content filters, denied topics, word filters, sensitive information (PII) filters, contextual grounding checks, Automated Reasoning checks.",
+      "serviceId": "bedrock"
+    },
+    {
+      "id": "fc-ai-ml-005",
+      "deck": "ai-ml",
+      "front": "Automated Reasoning checks",
+      "back": "Guardrail using formal logic to verify model responses against encoded policies; up to 99% verification accuracy (GA Aug 2025).",
+      "serviceId": "bedrock"
+    },
+    {
+      "id": "fc-ai-ml-006",
+      "deck": "ai-ml",
+      "front": "Bedrock Provisioned Throughput",
+      "back": "Purchase model units for guaranteed throughput, commonly required for custom models.",
+      "serviceId": "bedrock"
+    },
+    {
+      "id": "fc-ai-ml-007",
+      "deck": "ai-ml",
+      "front": "Bedrock batch inference",
+      "back": "Asynchronous jobs over S3 input at about 50% lower price than on-demand for supported models.",
+      "serviceId": "bedrock"
+    },
+    {
+      "id": "fc-ai-ml-008",
+      "deck": "ai-ml",
+      "front": "Bedrock prompt caching",
+      "back": "Caches repeated prompt prefixes to reduce latency and cost of cached input tokens.",
+      "serviceId": "bedrock"
+    },
+    {
+      "id": "fc-ai-ml-009",
+      "deck": "ai-ml",
+      "front": "Cross-Region inference",
+      "back": "Inference profiles route on-demand requests across Regions in a geography (or globally) for higher throughput.",
+      "serviceId": "bedrock"
+    },
+    {
+      "id": "fc-ai-ml-010",
+      "deck": "ai-ml",
+      "front": "Bedrock model customization options",
+      "back": "Fine-tuning, continued pre-training, distillation, and reinforcement fine-tuning (re:Invent 2025).",
+      "serviceId": "bedrock"
+    },
+    {
+      "id": "fc-ai-ml-011",
+      "deck": "ai-ml",
+      "front": "Bedrock data privacy",
+      "back": "Prompts and completions are not used to train base models or shared with model providers; PrivateLink supported.",
+      "serviceId": "bedrock"
+    },
+    {
+      "id": "fc-ai-ml-012",
+      "deck": "ai-ml",
+      "front": "OpenAI models on Bedrock (2026)",
+      "back": "OpenAI open-weight models on Bedrock since 2025; GPT-5.x in limited preview April 2026; GPT-6 Astra GA Sept 2026.",
+      "serviceId": "bedrock"
+    },
+    {
+      "id": "fc-ai-ml-013",
+      "deck": "ai-ml",
+      "front": "Bedrock AgentCore components",
+      "back": "Runtime, Memory, Gateway, Identity, Browser, Code Interpreter, Observability, Policy, Evaluations.",
+      "serviceId": "bedrock-agentcore"
+    },
+    {
+      "id": "fc-ai-ml-014",
+      "deck": "ai-ml",
+      "front": "AgentCore Runtime",
+      "back": "Serverless microVM runtime for agents with session isolation and long-running sessions; framework, protocol (MCP, A2A), and model agnostic.",
+      "serviceId": "bedrock-agentcore"
+    },
+    {
+      "id": "fc-ai-ml-015",
+      "deck": "ai-ml",
+      "front": "AgentCore Runtime V2 (Sept 2026)",
+      "back": "Elastic memory billing (pay for actual not peak) and consistent cold starts (~2 s P75 for 200 MB–2 GB images).",
+      "serviceId": "bedrock-agentcore"
+    },
+    {
+      "id": "fc-ai-ml-016",
+      "deck": "ai-ml",
+      "front": "AgentCore Gateway",
+      "back": "Turns APIs and Lambda functions into MCP-compatible tools and connects to existing MCP servers.",
+      "serviceId": "bedrock-agentcore"
+    },
+    {
+      "id": "fc-ai-ml-017",
+      "deck": "ai-ml",
+      "front": "AgentCore Policy",
+      "back": "Intercepts Gateway tool calls and enforces fine-grained policies on agent actions outside agent code.",
+      "serviceId": "bedrock-agentcore"
+    },
+    {
+      "id": "fc-ai-ml-018",
+      "deck": "ai-ml",
+      "front": "AgentCore Identity",
+      "back": "Inbound auth for agents and outbound OAuth/API-key credential management on behalf of users or agents.",
+      "serviceId": "bedrock-agentcore"
+    },
+    {
+      "id": "fc-ai-ml-019",
+      "deck": "ai-ml",
+      "front": "Strands Agents",
+      "back": "AWS open-source, model-driven agent SDK (Python/TypeScript) that deploys to AgentCore.",
+      "serviceId": "bedrock-agentcore"
+    },
+    {
+      "id": "fc-ai-ml-020",
+      "deck": "ai-ml",
+      "front": "Amazon Nova 2 family",
+      "back": "Nova 2 Lite (reasoning, 1M-token context), Nova 2 Sonic (speech-to-speech), Nova 2 Omni (multimodal, preview); Nova Forge for custom model training.",
+      "serviceId": "nova"
+    },
+    {
+      "id": "fc-ai-ml-021",
+      "deck": "ai-ml",
+      "front": "Nova Act",
+      "back": "Service/SDK for building agents that automate browser UI workflows with high reliability.",
+      "serviceId": "nova"
+    },
+    {
+      "id": "fc-ai-ml-022",
+      "deck": "ai-ml",
+      "front": "SageMaker AI",
+      "back": "Build, train, tune, and deploy custom ML models; real-time, serverless, asynchronous, and batch inference; HyperPod for large-scale training.",
+      "serviceId": "sagemaker-ai"
+    },
+    {
+      "id": "fc-ai-ml-023",
+      "deck": "ai-ml",
+      "front": "SageMaker inference options",
+      "back": "Real-time (low latency), Serverless (intermittent, scale to zero), Asynchronous (large payloads, long processing), Batch transform (offline).",
+      "serviceId": "sagemaker-ai"
+    },
+    {
+      "id": "fc-ai-ml-024",
+      "deck": "ai-ml",
+      "front": "Amazon Q Developer status (2026)",
+      "back": "No new sign-ups after May 15, 2026; end of support April 30, 2027; AWS recommends Kiro.",
+      "serviceId": "amazon-q-developer"
+    },
+    {
+      "id": "fc-ai-ml-025",
+      "deck": "ai-ml",
+      "front": "Kiro",
+      "back": "AWS agentic IDE and CLI for spec-driven development (requirements → design → tasks), with hooks and steering.",
+      "serviceId": "kiro"
+    },
+    {
+      "id": "fc-ai-ml-026",
+      "deck": "ai-ml",
+      "front": "Amazon Q Business",
+      "back": "Enterprise generative AI assistant over company data with 40+ connectors and ACL-aware answers.",
+      "serviceId": "amazon-q-business"
+    },
+    {
+      "id": "fc-ai-ml-027",
+      "deck": "ai-ml",
+      "front": "Rekognition vs Textract",
+      "back": "Rekognition: images/video (labels, faces, moderation). Textract: documents (text, forms, tables, invoices, IDs).",
+      "serviceId": "rekognition"
+    },
+    {
+      "id": "fc-ai-ml-028",
+      "deck": "ai-ml",
+      "front": "Comprehend",
+      "back": "NLP: entities, key phrases, sentiment, language, PII detection, custom classification.",
+      "serviceId": "comprehend"
+    },
+    {
+      "id": "fc-ai-ml-029",
+      "deck": "ai-ml",
+      "front": "Transcribe",
+      "back": "Speech-to-text with speaker diarization, custom vocabulary, PII redaction, and Call Analytics.",
+      "serviceId": "transcribe"
+    },
+    {
+      "id": "fc-ai-ml-030",
+      "deck": "ai-ml",
+      "front": "RAG vs fine-tuning",
+      "back": "RAG: inject retrieved, fresh data at inference, citations, no weight change. Fine-tuning: change weights for style/task behavior; data frozen at training time.",
+      "serviceId": "bedrock"
+    },
+    {
+      "id": "fc-integration-001",
+      "deck": "integration",
+      "front": "SQS message size (Aug 2025)",
+      "back": "Up to 1 MiB (raised from 256 KiB); Extended Client Library stores payloads up to 2 GB in S3.",
+      "serviceId": "sqs"
+    },
+    {
+      "id": "fc-integration-002",
+      "deck": "integration",
+      "front": "SQS retention",
+      "back": "1 minute to 14 days (default 4 days).",
+      "serviceId": "sqs"
+    },
+    {
+      "id": "fc-integration-003",
+      "deck": "integration",
+      "front": "SQS visibility timeout",
+      "back": "Default 30 seconds, max 12 hours; set to at least 6x the Lambda function timeout when using Lambda.",
+      "serviceId": "sqs"
+    },
+    {
+      "id": "fc-integration-004",
+      "deck": "integration",
+      "front": "SQS long polling",
+      "back": "WaitTimeSeconds up to 20 s; reduces empty responses and cost.",
+      "serviceId": "sqs"
+    },
+    {
+      "id": "fc-integration-005",
+      "deck": "integration",
+      "front": "SQS delay queues",
+      "back": "Delay delivery of new messages up to 15 minutes.",
+      "serviceId": "sqs"
+    },
+    {
+      "id": "fc-integration-006",
+      "deck": "integration",
+      "front": "SQS FIFO throughput",
+      "back": "300 API calls/s per API action (3,000 messages/s with batching); high throughput mode supports far more (up to 70,000 TPS in some Regions).",
+      "serviceId": "sqs"
+    },
+    {
+      "id": "fc-integration-007",
+      "deck": "integration",
+      "front": "SQS standard vs FIFO",
+      "back": "Standard: nearly unlimited throughput, at-least-once, best-effort ordering. FIFO: ordered per message group, exactly-once processing (5-minute dedup window).",
+      "serviceId": "sqs"
+    },
+    {
+      "id": "fc-integration-008",
+      "deck": "integration",
+      "front": "SQS dead-letter queue",
+      "back": "Receives messages exceeding maxReceiveCount; redrive back to source queue after fixing issues. DLQ type must match (FIFO/standard).",
+      "serviceId": "sqs"
+    },
+    {
+      "id": "fc-integration-009",
+      "deck": "integration",
+      "front": "SNS message size (Sept 2026)",
+      "back": "Up to 1 MiB (raised from 256 KB); Extended Client Library for larger payloads via S3.",
+      "serviceId": "sns"
+    },
+    {
+      "id": "fc-integration-010",
+      "deck": "integration",
+      "front": "SNS fan-out",
+      "back": "Publish once to a topic delivered to many subscribers (SQS, Lambda, HTTP, email, SMS, Firehose); message filtering by attributes or body.",
+      "serviceId": "sns"
+    },
+    {
+      "id": "fc-integration-011",
+      "deck": "integration",
+      "front": "SNS FIFO topics",
+      "back": "Strict ordering and deduplication fan-out to SQS FIFO queues.",
+      "serviceId": "sns"
+    },
+    {
+      "id": "fc-integration-012",
+      "deck": "integration",
+      "front": "EventBridge event size (2025)",
+      "back": "PutEvents entries up to 1 MB (raised from 256 KB).",
+      "serviceId": "eventbridge"
+    },
+    {
+      "id": "fc-integration-013",
+      "deck": "integration",
+      "front": "EventBridge components",
+      "back": "Event buses (default, custom, partner), rules with patterns, targets, archive & replay, schema registry, Pipes, Scheduler.",
+      "serviceId": "eventbridge"
+    },
+    {
+      "id": "fc-integration-014",
+      "deck": "integration",
+      "front": "EventBridge retry policy",
+      "back": "Retries delivery up to 24 hours and 185 attempts by default; configure DLQ for failed events.",
+      "serviceId": "eventbridge"
+    },
+    {
+      "id": "fc-integration-015",
+      "deck": "integration",
+      "front": "EventBridge Pipes",
+      "back": "Point-to-point integration from sources (SQS, Kinesis, DynamoDB Streams, MSK) with filtering, enrichment, and targets.",
+      "serviceId": "eventbridge"
+    },
+    {
+      "id": "fc-integration-016",
+      "deck": "integration",
+      "front": "EventBridge Scheduler",
+      "back": "Serverless scheduler for one-time or recurring invocations of 270+ AWS services, with time zones and flexible windows.",
+      "serviceId": "eventbridge"
+    },
+    {
+      "id": "fc-integration-017",
+      "deck": "integration",
+      "front": "Step Functions Standard vs Express",
+      "back": "Standard: up to 1 year, exactly-once, priced per state transition. Express: up to 5 minutes, at-least-once (async) , high-volume, priced by duration/requests.",
+      "serviceId": "step-functions"
+    },
+    {
+      "id": "fc-integration-018",
+      "deck": "integration",
+      "front": "Step Functions wait for callback",
+      "back": ".waitForTaskToken pauses until an external system (e.g., human approval) returns the token.",
+      "serviceId": "step-functions"
+    },
+    {
+      "id": "fc-integration-019",
+      "deck": "integration",
+      "front": "Step Functions payload limit",
+      "back": "State input/output up to 256 KiB; use S3 for larger data (Distributed Map for large-scale parallel processing over S3).",
+      "serviceId": "step-functions"
+    },
+    {
+      "id": "fc-integration-020",
+      "deck": "integration",
+      "front": "AppSync",
+      "back": "Managed GraphQL APIs with real-time subscriptions and resolvers to DynamoDB, Lambda, HTTP, RDS, OpenSearch; AppSync Events for WebSocket pub/sub.",
+      "serviceId": "appsync"
+    },
+    {
+      "id": "fc-integration-021",
+      "deck": "integration",
+      "front": "Amazon MQ",
+      "back": "Managed ActiveMQ and RabbitMQ brokers for lift-and-shift of apps using JMS, AMQP, MQTT, STOMP, OpenWire.",
+      "serviceId": "mq"
+    },
+    {
+      "id": "fc-integration-022",
+      "deck": "integration",
+      "front": "API Gateway API types",
+      "back": "REST (full features: caching, usage plans, request validation), HTTP (cheaper, faster, JWT auth), WebSocket.",
+      "serviceId": "api-gateway"
+    },
+    {
+      "id": "fc-management-001",
+      "deck": "management",
+      "front": "CloudWatch metric resolution",
+      "back": "Standard 1-minute (basic EC2 metrics 5-minute unless detailed monitoring); high-resolution custom metrics down to 1 second.",
+      "serviceId": "cloudwatch"
+    },
+    {
+      "id": "fc-management-002",
+      "deck": "management",
+      "front": "CloudWatch agent",
+      "back": "Required for memory, disk, and custom OS-level metrics and for shipping logs from EC2/on-premises.",
+      "serviceId": "cloudwatch"
+    },
+    {
+      "id": "fc-management-003",
+      "deck": "management",
+      "front": "CloudWatch composite alarms",
+      "back": "Combine multiple alarm states with AND/OR/NOT to reduce noise.",
+      "serviceId": "cloudwatch"
+    },
+    {
+      "id": "fc-management-004",
+      "deck": "management",
+      "front": "CloudWatch Logs Insights",
+      "back": "Interactive query language over log groups for ad hoc analysis.",
+      "serviceId": "cloudwatch"
+    },
+    {
+      "id": "fc-management-005",
+      "deck": "management",
+      "front": "CloudWatch cross-account observability",
+      "back": "Link source accounts to a monitoring account to view metrics, logs, and traces centrally.",
+      "serviceId": "cloudwatch"
+    },
+    {
+      "id": "fc-management-006",
+      "deck": "management",
+      "front": "CloudWatch Application Signals",
+      "back": "OpenTelemetry-based APM with SLOs, service maps, and golden-signal dashboards.",
+      "serviceId": "cloudwatch"
+    },
+    {
+      "id": "fc-management-007",
+      "deck": "management",
+      "front": "CloudWatch unified data management (re:Invent 2025)",
+      "back": "Normalizes operational/security logs with OCSF and Apache Iceberg support for analytics integration.",
+      "serviceId": "cloudwatch"
+    },
+    {
+      "id": "fc-management-008",
+      "deck": "management",
+      "front": "X-Ray",
+      "back": "Distributed tracing with service maps, segments/subsegments, sampling rules; OpenTelemetry via ADOT.",
+      "serviceId": "x-ray"
+    },
+    {
+      "id": "fc-management-009",
+      "deck": "management",
+      "front": "CloudFormation change sets",
+      "back": "Preview how proposed stack changes affect resources before executing.",
+      "serviceId": "cloudformation"
+    },
+    {
+      "id": "fc-management-010",
+      "deck": "management",
+      "front": "CloudFormation StackSets",
+      "back": "Deploy stacks across multiple accounts and Regions, with service-managed permissions via Organizations.",
+      "serviceId": "cloudformation"
+    },
+    {
+      "id": "fc-management-011",
+      "deck": "management",
+      "front": "CloudFormation drift detection",
+      "back": "Detects resources whose actual configuration differs from the template.",
+      "serviceId": "cloudformation"
+    },
+    {
+      "id": "fc-management-012",
+      "deck": "management",
+      "front": "CloudFormation DeletionPolicy",
+      "back": "Retain or Snapshot resources when a stack is deleted (e.g., keep RDS snapshot).",
+      "serviceId": "cloudformation"
+    },
+    {
+      "id": "fc-management-013",
+      "deck": "management",
+      "front": "CDK",
+      "back": "Define infrastructure in TypeScript, Python, Java, C#, Go; synthesizes to CloudFormation; constructs L1/L2/L3.",
+      "serviceId": "cdk"
+    },
+    {
+      "id": "fc-management-014",
+      "deck": "management",
+      "front": "Systems Manager capabilities",
+      "back": "Session Manager, Run Command, Patch Manager, Parameter Store, Automation, State Manager, Inventory, AppConfig, OpsCenter, Incident Manager.",
+      "serviceId": "systems-manager"
+    },
+    {
+      "id": "fc-management-015",
+      "deck": "management",
+      "front": "Trusted Advisor categories",
+      "back": "Cost optimization, performance, security, fault tolerance, service limits, operational excellence. The full set of checks requires a Business-level or higher Support plan.",
+      "serviceId": "trusted-advisor"
+    },
+    {
+      "id": "fc-management-016",
+      "deck": "management",
+      "front": "Service Catalog",
+      "back": "Publish approved IaC products and portfolios for governed self-service provisioning with constraints.",
+      "serviceId": "service-catalog"
+    },
+    {
+      "id": "fc-management-017",
+      "deck": "management",
+      "front": "Well-Architected Tool",
+      "back": "Conduct workload reviews against pillars and lenses (including custom lenses), track milestones and improvement plans.",
+      "serviceId": "well-architected-tool"
+    },
+    {
+      "id": "fc-management-018",
+      "deck": "management",
+      "front": "AWS Health",
+      "back": "Account-specific events (outages, scheduled maintenance) with organizational view and EventBridge integration.",
+      "serviceId": "cloudwatch"
+    },
+    {
+      "id": "fc-management-019",
+      "deck": "management",
+      "front": "AWS DevOps Agent",
+      "back": "Autonomous on-call engineer (GA March 2026) that investigates incidents using observability, code, and deployment data.",
+      "serviceId": "cloudwatch"
+    },
+    {
+      "id": "fc-management-020",
+      "deck": "management",
+      "front": "CloudWatch billing alarm",
+      "back": "EstimatedCharges metric in us-east-1; requires enabling billing alerts.",
+      "serviceId": "cloudwatch"
+    },
+    {
+      "id": "fc-devtools-001",
+      "deck": "devtools",
+      "front": "CodePipeline",
+      "back": "Managed CI/CD orchestration of source, build, test, approval, and deploy stages; V2 pipelines support triggers and variables.",
+      "serviceId": "codepipeline"
+    },
+    {
+      "id": "fc-devtools-002",
+      "deck": "devtools",
+      "front": "CodeBuild",
+      "back": "Fully managed build service billed per build minute; buildspec.yml defines phases; runs in containers.",
+      "serviceId": "codebuild"
+    },
+    {
+      "id": "fc-devtools-003",
+      "deck": "devtools",
+      "front": "CodeCommit status",
+      "back": "Closed to new customers since July 2024; use GitHub, GitLab, or Bitbucket with CodeConnections.",
+      "serviceId": "codepipeline"
+    },
+    {
+      "id": "fc-devtools-004",
+      "deck": "devtools",
+      "front": "Blue/green vs canary vs rolling",
+      "back": "Blue/green: switch all traffic to a new environment. Canary: small % first then all. Rolling: replace in batches.",
+      "serviceId": "codepipeline"
+    },
+    {
+      "id": "fc-devtools-005",
+      "deck": "devtools",
+      "front": "Immutable deployments",
+      "back": "Launch new instances with the new version and swap them in rather than modifying existing ones.",
+      "serviceId": "elastic-beanstalk"
+    },
+    {
+      "id": "fc-devtools-006",
+      "deck": "devtools",
+      "front": "Lambda traffic shifting",
+      "back": "Aliases with weighted routing between versions enable canary/linear deployments with alarm-based rollback.",
+      "serviceId": "lambda"
+    },
+    {
+      "id": "fc-devtools-007",
+      "deck": "devtools",
+      "front": "Kiro spec-driven workflow",
+      "back": "Generates requirements (EARS notation), design, and task lists before implementing code; agent hooks automate tasks on file events.",
+      "serviceId": "kiro"
+    },
+    {
+      "id": "fc-migration-001",
+      "deck": "migration",
+      "front": "7 Rs of migration",
+      "back": "Retire, Retain, Rehost, Relocate, Repurchase, Replatform, Refactor/re-architect.",
+      "serviceId": "migration-hub"
+    },
+    {
+      "id": "fc-migration-002",
+      "deck": "migration",
+      "front": "Rehost vs Replatform",
+      "back": "Rehost: lift-and-shift as-is (MGN). Replatform: small optimizations like moving to RDS or containers without code redesign.",
+      "serviceId": "application-migration-service"
+    },
+    {
+      "id": "fc-migration-003",
+      "deck": "migration",
+      "front": "Relocate",
+      "back": "Move VMware workloads without changes, e.g., to Amazon Elastic VMware Service (EVS) running VCF in your VPC.",
+      "serviceId": "migration-hub"
+    },
+    {
+      "id": "fc-migration-004",
+      "deck": "migration",
+      "front": "Application Migration Service (MGN)",
+      "back": "Continuous block-level replication of servers to AWS with test and cutover launches; primary rehost tool.",
+      "serviceId": "application-migration-service"
+    },
+    {
+      "id": "fc-migration-005",
+      "deck": "migration",
+      "front": "DMS",
+      "back": "Database Migration Service: full load + CDC for homogeneous and heterogeneous migrations; DMS Serverless option.",
+      "serviceId": "dms"
+    },
+    {
+      "id": "fc-migration-006",
+      "deck": "migration",
+      "front": "DMS Schema Conversion",
+      "back": "Converts database schemas and code (e.g., Oracle to PostgreSQL) inside DMS, with generative AI assist; successor path to standalone SCT.",
+      "serviceId": "dms"
+    },
+    {
+      "id": "fc-migration-007",
+      "deck": "migration",
+      "front": "DataSync",
+      "back": "Online transfer from NFS/SMB/HDFS/object storage to S3, EFS, FSx with integrity checks, scheduling, and bandwidth control.",
+      "serviceId": "datasync"
+    },
+    {
+      "id": "fc-migration-008",
+      "deck": "migration",
+      "front": "Snowball Edge status (2025-2026)",
+      "back": "Only for existing customers since Nov 7, 2025; support ends Dec 31, 2026. New customers: DataSync, AWS Data Transfer Terminal, partners, or Outposts for edge compute.",
+      "serviceId": "snow-family"
+    },
+    {
+      "id": "fc-migration-009",
+      "deck": "migration",
+      "front": "Transfer Family",
+      "back": "Managed SFTP, FTPS, FTP, and AS2 endpoints backed by S3 or EFS.",
+      "serviceId": "transfer-family"
+    },
+    {
+      "id": "fc-migration-010",
+      "deck": "migration",
+      "front": "Migration Hub",
+      "back": "Central place to track application migration progress across tools and accounts.",
+      "serviceId": "migration-hub"
+    },
+    {
+      "id": "fc-migration-011",
+      "deck": "migration",
+      "front": "AWS Transform",
+      "back": "Agentic AI service for migration and modernization: VMware, mainframe, .NET/Windows, custom code, and continuous modernization.",
+      "serviceId": "migration-hub"
+    },
+    {
+      "id": "fc-migration-012",
+      "deck": "migration",
+      "front": "Data transfer time rule of thumb",
+      "back": "1 Gbps fully utilized moves ~10 TB/day (~100 TB in 10 days); if online transfer exceeds the deadline, use offline/physical options.",
+      "serviceId": "datasync"
+    },
+    {
+      "id": "fc-migration-013",
+      "deck": "migration",
+      "front": "Migration phases (AWS)",
+      "back": "Assess (business case), Mobilize (landing zone, skills, detailed planning), Migrate and modernize (waves).",
+      "serviceId": "migration-hub"
+    },
+    {
+      "id": "fc-migration-014",
+      "deck": "migration",
+      "front": "Strangler fig pattern",
+      "back": "Incrementally route functionality from a monolith to new services behind a facade until the monolith can be retired.",
+      "serviceId": "api-gateway"
+    },
+    {
+      "id": "fc-migration-015",
+      "deck": "migration",
+      "front": "Storage Gateway for migration",
+      "back": "Hybrid access during migration: on-premises apps keep NFS/SMB while data lands in S3.",
+      "serviceId": "storage-gateway"
+    },
+    {
+      "id": "fc-cost-001",
+      "deck": "cost",
+      "front": "Savings Plans types",
+      "back": "Compute (up to 66%, any family/Region, Fargate, Lambda), EC2 Instance (up to 72%, one family in one Region), SageMaker AI, and Database Savings Plans (up to 35%).",
+      "serviceId": "savings-plans"
+    },
+    {
+      "id": "fc-cost-002",
+      "deck": "cost",
+      "front": "Standard vs Convertible RIs",
+      "back": "Standard: up to 72% off, can modify some attributes. Convertible: up to 66%, exchange for different families/OS.",
+      "serviceId": "savings-plans"
+    },
+    {
+      "id": "fc-cost-003",
+      "deck": "cost",
+      "front": "Spot discount",
+      "back": "Up to 90% off On-Demand for interruptible capacity.",
+      "serviceId": "ec2"
+    },
+    {
+      "id": "fc-cost-004",
+      "deck": "cost",
+      "front": "AWS Budgets",
+      "back": "Cost, usage, RI/SP utilization and coverage budgets with actual and forecasted alerts and automated budget actions.",
+      "serviceId": "budgets"
+    },
+    {
+      "id": "fc-cost-005",
+      "deck": "cost",
+      "front": "Cost Explorer",
+      "back": "Visualize and filter historical costs and usage, forecast spend, and view RI/Savings Plans recommendations.",
+      "serviceId": "cost-explorer"
+    },
+    {
+      "id": "fc-cost-006",
+      "deck": "cost",
+      "front": "Cost Anomaly Detection",
+      "back": "ML-based monitoring of spend that alerts on unusual cost spikes.",
+      "serviceId": "cost-explorer"
+    },
+    {
+      "id": "fc-cost-007",
+      "deck": "cost",
+      "front": "Cost allocation tags",
+      "back": "User-defined or AWS-generated tags that must be activated in Billing to appear in cost reports.",
+      "serviceId": "cost-explorer"
+    },
+    {
+      "id": "fc-cost-008",
+      "deck": "cost",
+      "front": "Compute Optimizer",
+      "back": "ML rightsizing recommendations for EC2, ASGs, EBS, Lambda, ECS on Fargate, RDS/Aurora, and commercial software licenses.",
+      "serviceId": "compute-optimizer"
+    },
+    {
+      "id": "fc-cost-009",
+      "deck": "cost",
+      "front": "Cost Optimization Hub",
+      "back": "Consolidates and prioritizes cost recommendations (rightsizing, idle, commitments) across accounts and Regions.",
+      "serviceId": "compute-optimizer"
+    },
+    {
+      "id": "fc-cost-010",
+      "deck": "cost",
+      "front": "Data transfer basics",
+      "back": "Inbound from internet is free; intra-AZ via private IP free; cross-AZ charged per GB each direction; outbound to internet charged; origin to CloudFront free.",
+      "serviceId": "vpc"
+    },
+    {
+      "id": "fc-cost-011",
+      "deck": "cost",
+      "front": "Gateway endpoints and cost",
+      "back": "S3/DynamoDB gateway endpoints are free and avoid NAT gateway processing charges.",
+      "serviceId": "vpc"
+    },
+    {
+      "id": "fc-cost-012",
+      "deck": "cost",
+      "front": "Graviton cost benefit",
+      "back": "Up to ~40% better price performance vs comparable x86; Lambda arm64 ~20% lower GB-second price.",
+      "serviceId": "ec2"
+    },
+    {
+      "id": "fc-cost-013",
+      "deck": "cost",
+      "front": "S3 cost levers",
+      "back": "Lifecycle transitions, Intelligent-Tiering, delete incomplete multipart uploads, expire noncurrent versions, Storage Lens analysis.",
+      "serviceId": "s3"
+    },
+    {
+      "id": "fc-cost-014",
+      "deck": "cost",
+      "front": "Lambda Managed Instances pricing",
+      "back": "Standard request charges + EC2 instance price + 15% management fee; no per-duration charge; discountable via Savings Plans/RIs.",
+      "serviceId": "lambda"
+    },
+    {
+      "id": "fc-cost-015",
+      "deck": "cost",
+      "front": "CloudFront Security Savings Bundle",
+      "back": "1-year commitment giving up to 30% savings on CloudFront with WAF credit included.",
+      "serviceId": "cloudfront"
+    },
+    {
+      "id": "fc-cost-016",
+      "deck": "cost",
+      "front": "Well-Architected cost principles",
+      "back": "Implement cloud financial management, adopt a consumption model, measure overall efficiency, stop spending on undifferentiated heavy lifting, analyze and attribute expenditure.",
+      "serviceId": "well-architected-tool"
+    },
+    {
+      "id": "fc-cost-017",
+      "deck": "cost",
+      "front": "Right-size before you commit",
+      "back": "Rightsize and remove idle resources first, then buy Savings Plans/RIs for the remaining steady baseline.",
+      "serviceId": "savings-plans"
+    },
+    {
+      "id": "fc-cost-018",
+      "deck": "cost",
+      "front": "Bedrock cost levers",
+      "back": "Batch inference (~50% off), prompt caching, model choice (smaller models, distillation), Provisioned Throughput only for steady high volume.",
+      "serviceId": "bedrock"
+    },
+    {
+      "id": "fc-well-architected-001",
+      "deck": "well-architected",
+      "front": "Six Well-Architected pillars",
+      "back": "Operational Excellence, Security, Reliability, Performance Efficiency, Cost Optimization, Sustainability.",
+      "serviceId": "well-architected-tool"
+    },
+    {
+      "id": "fc-well-architected-002",
+      "deck": "well-architected",
+      "front": "Operational Excellence design principles",
+      "back": "Organize teams around business outcomes, implement observability, safely automate, make frequent small reversible changes, refine procedures, anticipate failure, learn from events, use managed services.",
+      "serviceId": "well-architected-tool"
+    },
+    {
+      "id": "fc-well-architected-003",
+      "deck": "well-architected",
+      "front": "Security design principles",
+      "back": "Strong identity foundation, traceability, security at all layers, automate security best practices, protect data in transit and at rest, keep people away from data, prepare for security events.",
+      "serviceId": "well-architected-tool"
+    },
+    {
+      "id": "fc-well-architected-004",
+      "deck": "well-architected",
+      "front": "Reliability design principles",
+      "back": "Automatically recover from failure, test recovery procedures, scale horizontally, stop guessing capacity, manage change through automation.",
+      "serviceId": "well-architected-tool"
+    },
+    {
+      "id": "fc-well-architected-005",
+      "deck": "well-architected",
+      "front": "Performance Efficiency design principles",
+      "back": "Democratize advanced technologies, go global in minutes, use serverless architectures, experiment more often, consider mechanical sympathy.",
+      "serviceId": "well-architected-tool"
+    },
+    {
+      "id": "fc-well-architected-006",
+      "deck": "well-architected",
+      "front": "Sustainability design principles",
+      "back": "Understand your impact, establish goals, maximize utilization, adopt more efficient hardware/software, use managed services, reduce downstream impact.",
+      "serviceId": "well-architected-tool"
+    },
+    {
+      "id": "fc-well-architected-007",
+      "deck": "well-architected",
+      "front": "RTO",
+      "back": "Recovery Time Objective: maximum acceptable delay between service interruption and restoration.",
+      "serviceId": "aws-backup"
+    },
+    {
+      "id": "fc-well-architected-008",
+      "deck": "well-architected",
+      "front": "RPO",
+      "back": "Recovery Point Objective: maximum acceptable time since the last data recovery point (i.e., data loss window).",
+      "serviceId": "aws-backup"
+    },
+    {
+      "id": "fc-well-architected-009",
+      "deck": "well-architected",
+      "front": "DR strategy: backup and restore",
+      "back": "RPO/RTO hours; lowest cost; restore data and redeploy infrastructure with IaC in the recovery Region.",
+      "serviceId": "aws-backup"
+    },
+    {
+      "id": "fc-well-architected-010",
+      "deck": "well-architected",
+      "front": "DR strategy: pilot light",
+      "back": "RPO/RTO tens of minutes; data replicated live, core infrastructure provisioned but app servers off until failover.",
+      "serviceId": "aurora"
+    },
+    {
+      "id": "fc-well-architected-011",
+      "deck": "well-architected",
+      "front": "DR strategy: warm standby",
+      "back": "RPO seconds, RTO minutes; scaled-down but fully functional copy running; scale up on failover.",
+      "serviceId": "ec2-auto-scaling"
+    },
+    {
+      "id": "fc-well-architected-012",
+      "deck": "well-architected",
+      "front": "DR strategy: multi-site active/active",
+      "back": "Near-zero RPO/RTO; full production in multiple Regions serving traffic; highest cost and complexity.",
+      "serviceId": "dynamodb"
+    },
+    {
+      "id": "fc-well-architected-013",
+      "deck": "well-architected",
+      "front": "Static stability",
+      "back": "System keeps working without needing changes during a failure (e.g., pre-provisioned capacity in each AZ/Region).",
+      "serviceId": "ec2-auto-scaling"
+    },
+    {
+      "id": "fc-well-architected-014",
+      "deck": "well-architected",
+      "front": "Control plane vs data plane",
+      "back": "Control plane: APIs to create/modify resources. Data plane: the running service. Rely on data planes during recovery; they are more available.",
+      "serviceId": "route53"
+    },
+    {
+      "id": "fc-well-architected-015",
+      "deck": "well-architected",
+      "front": "Availability math (serial)",
+      "back": "Serial hard dependencies multiply: two 99.9% components in series ≈ 99.8%.",
+      "serviceId": "well-architected-tool"
+    },
+    {
+      "id": "fc-well-architected-016",
+      "deck": "well-architected",
+      "front": "Availability math (redundant)",
+      "back": "Independent redundant components: 1 − (1 − A)^n; two 99% components in parallel ≈ 99.99%.",
+      "serviceId": "well-architected-tool"
+    },
+    {
+      "id": "fc-well-architected-017",
+      "deck": "well-architected",
+      "front": "Nines of availability downtime",
+      "back": "99.9% ≈ 8.76 hours/year; 99.99% ≈ 52.6 minutes/year; 99.999% ≈ 5.26 minutes/year.",
+      "serviceId": "well-architected-tool"
+    },
+    {
+      "id": "fc-well-architected-018",
+      "deck": "well-architected",
+      "front": "Shared responsibility model",
+      "back": "AWS: security OF the cloud (hardware, facilities, managed-service software). Customer: security IN the cloud (data, IAM, configuration, OS on EC2).",
+      "serviceId": "iam"
+    },
+    {
+      "id": "fc-well-architected-019",
+      "deck": "well-architected",
+      "front": "Loose coupling",
+      "back": "Components interact through queues, topics, and events so failures and scaling are isolated (SQS, SNS, EventBridge).",
+      "serviceId": "sqs"
+    },
+    {
+      "id": "fc-well-architected-020",
+      "deck": "well-architected",
+      "front": "Idempotency",
+      "back": "An operation can be safely retried with the same result; essential with at-least-once delivery (idempotency keys, conditional writes).",
+      "serviceId": "dynamodb"
+    },
+    {
+      "id": "fc-well-architected-021",
+      "deck": "well-architected",
+      "front": "Exponential backoff with jitter",
+      "back": "Retry pattern that increases wait time exponentially with randomization to avoid synchronized retry storms.",
+      "serviceId": "lambda"
+    },
+    {
+      "id": "fc-well-architected-022",
+      "deck": "well-architected",
+      "front": "Cell-based architecture",
+      "back": "Partition a workload into independent cells serving subsets of customers to limit blast radius.",
+      "serviceId": "route53"
+    },
+    {
+      "id": "fc-well-architected-023",
+      "deck": "well-architected",
+      "front": "Shuffle sharding",
+      "back": "Assign each customer to a random subset of workers so one bad customer affects few others.",
+      "serviceId": "route53"
+    },
+    {
+      "id": "fc-well-architected-024",
+      "deck": "well-architected",
+      "front": "Well-Architected lenses",
+      "back": "Domain-specific guidance, e.g., Serverless, SaaS, Machine Learning, Generative AI, Financial Services, IoT, Container Build.",
+      "serviceId": "well-architected-tool"
+    },
+    {
+      "id": "fc-well-architected-025",
+      "deck": "well-architected",
+      "front": "Bulkhead pattern",
+      "back": "Isolate resources (pools, cells, accounts) so a failure in one does not exhaust capacity for others.",
+      "serviceId": "lambda"
+    },
+    {
+      "id": "fc-leadership-001",
+      "deck": "leadership",
+      "front": "Customer Obsession",
+      "back": "Leaders start with the customer and work backwards. They work vigorously to earn and keep customer trust."
+    },
+    {
+      "id": "fc-leadership-002",
+      "deck": "leadership",
+      "front": "Ownership",
+      "back": "Leaders are owners. They think long term, act on behalf of the entire company, and never say \"that is not my job.\""
+    },
+    {
+      "id": "fc-leadership-003",
+      "deck": "leadership",
+      "front": "Invent and Simplify",
+      "back": "Leaders expect and require innovation and invention from their teams and always find ways to simplify."
+    },
+    {
+      "id": "fc-leadership-004",
+      "deck": "leadership",
+      "front": "Are Right, A Lot",
+      "back": "Leaders have strong judgment and good instincts. They seek diverse perspectives and work to disconfirm their beliefs."
+    },
+    {
+      "id": "fc-leadership-005",
+      "deck": "leadership",
+      "front": "Learn and Be Curious",
+      "back": "Leaders are never done learning and always seek to improve themselves; curious about new possibilities and act to explore them."
+    },
+    {
+      "id": "fc-leadership-006",
+      "deck": "leadership",
+      "front": "Hire and Develop the Best",
+      "back": "Leaders raise the performance bar with every hire and promotion, and take seriously their role in coaching others."
+    },
+    {
+      "id": "fc-leadership-007",
+      "deck": "leadership",
+      "front": "Insist on the Highest Standards",
+      "back": "Relentlessly high standards; continually raise the bar; ensure defects are not sent down the line and problems stay fixed."
+    },
+    {
+      "id": "fc-leadership-008",
+      "deck": "leadership",
+      "front": "Think Big",
+      "back": "Thinking small is a self-fulfilling prophecy. Create and communicate a bold direction that inspires results."
+    },
+    {
+      "id": "fc-leadership-009",
+      "deck": "leadership",
+      "front": "Bias for Action",
+      "back": "Speed matters in business. Many decisions and actions are reversible and do not need extensive study. Value calculated risk taking."
+    },
+    {
+      "id": "fc-leadership-010",
+      "deck": "leadership",
+      "front": "Frugality",
+      "back": "Accomplish more with less. Constraints breed resourcefulness, self-sufficiency, and invention."
+    },
+    {
+      "id": "fc-leadership-011",
+      "deck": "leadership",
+      "front": "Earn Trust",
+      "back": "Listen attentively, speak candidly, treat others respectfully; be vocally self-critical; benchmark against the best."
+    },
+    {
+      "id": "fc-leadership-012",
+      "deck": "leadership",
+      "front": "Dive Deep",
+      "back": "Operate at all levels, stay connected to the details, audit frequently, and be skeptical when metrics and anecdote differ. No task is beneath them."
+    },
+    {
+      "id": "fc-leadership-013",
+      "deck": "leadership",
+      "front": "Have Backbone; Disagree and Commit",
+      "back": "Respectfully challenge decisions when you disagree, even when uncomfortable; once a decision is made, commit wholly."
+    },
+    {
+      "id": "fc-leadership-014",
+      "deck": "leadership",
+      "front": "Deliver Results",
+      "back": "Focus on the key inputs for the business and deliver them with the right quality and in a timely fashion; never settle."
+    },
+    {
+      "id": "fc-leadership-015",
+      "deck": "leadership",
+      "front": "Strive to be Earth’s Best Employer",
+      "back": "Create a safer, more productive, higher performing, more diverse, and more just work environment; lead with empathy."
+    },
+    {
+      "id": "fc-leadership-016",
+      "deck": "leadership",
+      "front": "Success and Scale Bring Broad Responsibility",
+      "back": "We are big and far from perfect; be humble and thoughtful about secondary effects; leave things better than you found them."
+    },
+    {
+      "id": "fc-leadership-017",
+      "deck": "leadership",
+      "front": "Which LP: \"Many decisions are two-way doors\"",
+      "back": "Bias for Action — reversible decisions should be made quickly with calculated risk."
+    },
+    {
+      "id": "fc-leadership-018",
+      "deck": "leadership",
+      "front": "Which LP: \"skeptical when metrics and anecdote differ\"",
+      "back": "Dive Deep."
+    },
+    {
+      "id": "fc-leadership-019",
+      "deck": "leadership",
+      "front": "Which LP: \"work to disconfirm their beliefs\"",
+      "back": "Are Right, A Lot."
+    },
+    {
+      "id": "fc-leadership-020",
+      "deck": "leadership",
+      "front": "Which LP: \"no extra points for growing headcount, budget size, or fixed expense\"",
+      "back": "Frugality."
+    },
+    {
+      "id": "fc-general-001",
+      "deck": "general",
+      "front": "SAA-C03 exam format",
+      "back": "65 questions (50 scored + 15 unscored), 130 minutes, passing score 720/1000."
+    },
+    {
+      "id": "fc-general-002",
+      "deck": "general",
+      "front": "SAA-C03 domain weights",
+      "back": "Secure 30%, Resilient 26%, High-Performing 24%, Cost-Optimized 20%."
+    },
+    {
+      "id": "fc-general-003",
+      "deck": "general",
+      "front": "SAP-C02 exam format",
+      "back": "75 questions (65 scored + 10 unscored), 180 minutes, passing score 750/1000."
+    },
+    {
+      "id": "fc-general-004",
+      "deck": "general",
+      "front": "SAP-C02 domain weights",
+      "back": "Organizational Complexity 26%, New Solutions 29%, Continuous Improvement 25%, Migration and Modernization 20%."
+    },
+    {
+      "id": "fc-general-005",
+      "deck": "general",
+      "front": "SAP-C02 emerging topics",
+      "back": "Unscored pretest items on security and responsible AI controls: Bedrock Guardrails, AgentCore Identity, and human oversight with Step Functions."
+    },
+    {
+      "id": "fc-general-006",
+      "deck": "general",
+      "front": "Region vs AZ vs edge location",
+      "back": "Region: geographic area with 3+ AZs. AZ: one or more discrete data centers with independent power/networking. Edge location: CloudFront/Route 53 PoP."
+    },
+    {
+      "id": "fc-general-007",
+      "deck": "general",
+      "front": "AWS global infrastructure (Sept 2026)",
+      "back": "39 launched Regions and 124 Availability Zones (Saudi Arabia and Chile announced), 750+ CloudFront PoPs, 46 Local Zones, 33 Wavelength Zones."
+    },
+    {
+      "id": "fc-general-008",
+      "deck": "general",
+      "front": "Working backwards",
+      "back": "Amazon mechanism: start from the customer need, write a PR/FAQ (press release + FAQ) before building."
+    },
+    {
+      "id": "fc-general-009",
+      "deck": "general",
+      "front": "PR/FAQ",
+      "back": "Working-backwards document: a mock press release announcing the finished product plus FAQs, used to align on customer value."
+    },
+    {
+      "id": "fc-general-010",
+      "deck": "general",
+      "front": "One-way vs two-way door decisions",
+      "back": "One-way: irreversible, decide carefully. Two-way: reversible, decide fast (Bias for Action)."
+    },
+    {
+      "id": "fc-general-011",
+      "deck": "general",
+      "front": "STAR method",
+      "back": "Situation, Task, Action, Result — structure for behavioral answers; spend most time on Action and quantify the Result."
+    },
+    {
+      "id": "fc-general-012",
+      "deck": "general",
+      "front": "Bar raiser",
+      "back": "Trained interviewer from outside the hiring team who ensures each hire raises the bar and can veto a hire."
+    },
+    {
+      "id": "fc-general-013",
+      "deck": "general",
+      "front": "Mechanisms (Amazon)",
+      "back": "Complete processes (tool + adoption + inspection) that turn good intentions into repeatable outcomes."
+    },
+    {
+      "id": "fc-general-014",
+      "deck": "general",
+      "front": "Two-pizza team",
+      "back": "Small autonomous team (feedable by two pizzas) that owns a service end to end."
+    },
+    {
+      "id": "fc-general-015",
+      "deck": "general",
+      "front": "Six-pager / narrative",
+      "back": "Amazon written-narrative meeting format read silently at the start of meetings instead of slides."
+    }
+  ]
+}

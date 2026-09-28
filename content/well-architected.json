@@ -1,0 +1,572 @@
+{
+  "snapshotDate": "2026-09-28",
+  "sources": [
+    "https://docs.aws.amazon.com/wellarchitected/latest/framework/the-pillars-of-the-framework.html",
+    "https://docs.aws.amazon.com/wellarchitected/latest/framework/appendix.html",
+    "https://docs.aws.amazon.com/wellarchitected/latest/framework/oe-design-principles.html",
+    "https://docs.aws.amazon.com/wellarchitected/latest/framework/sec-design.html",
+    "https://docs.aws.amazon.com/wellarchitected/latest/framework/rel-dp.html",
+    "https://docs.aws.amazon.com/wellarchitected/latest/framework/perf-dp.html",
+    "https://docs.aws.amazon.com/wellarchitected/latest/framework/cost-dp.html",
+    "https://docs.aws.amazon.com/wellarchitected/latest/framework/sus-design-principles.html",
+    "https://aws.amazon.com/architecture/well-architected/",
+    "https://docs.aws.amazon.com/wellarchitected/latest/agentic-ai-lens/agentic-ai-lens.html",
+    "https://aws.amazon.com/blogs/architecture/architecting-for-ai-excellence-aws-launches-three-well-architected-lenses-at-reinvent-2025",
+    "https://aws.amazon.com/about-aws/whats-new/2025/11/new-aws-well-architected-lenses-ai-ml-workloads",
+    "https://docs.aws.amazon.com/whitepapers/latest/disaster-recovery-workloads-on-aws/disaster-recovery-options-in-the-cloud.html",
+    "https://docs.aws.amazon.com/prescriptive-guidance/latest/large-migration-guide/migration-strategies.html",
+    "https://aws.amazon.com/about-aws/whats-new/2025/05/amazon-aurora-dsql-generally-available",
+    "https://aws.amazon.com/about-aws/whats-new/2025/06/amazon-dynamo-db-global-tables-multi-region-strong-consistency-generally-available/",
+    "https://aws.amazon.com/about-aws/whats-new/2025/08/amazon-application-recovery"
+  ],
+  "pillars": [
+    {
+      "id": "operational-excellence",
+      "name": "Operational Excellence",
+      "summary": "A commitment to build software correctly while consistently delivering a great customer experience: organizing teams, designing workloads, operating them at scale, and evolving them over time. Best-practice areas: Organization, Prepare, Operate, Evolve.",
+      "designPrinciples": [
+        {
+          "title": "Organize teams around business outcomes",
+          "detail": "Leadership vision, a business-aligned cloud operating model and KPIs aligned at every level let teams operate efficiently toward measurable outcomes."
+        },
+        {
+          "title": "Implement observability for actionable insights",
+          "detail": "Understand workload behavior, performance, reliability, cost and health through telemetry and KPIs so you can act quickly when business outcomes are at risk."
+        },
+        {
+          "title": "Safely automate where possible",
+          "detail": "Define the workload and its operations as code and trigger them from events, with guardrails such as rate control, error thresholds and approvals."
+        },
+        {
+          "title": "Make frequent, small, reversible changes",
+          "detail": "Loosely coupled, automatically deployed components let you ship small increments that reduce blast radius and can be rolled back fast."
+        },
+        {
+          "title": "Refine operations procedures frequently",
+          "detail": "Review and validate runbooks regularly, fix gaps, communicate changes, and use game days to keep teams familiar with procedures."
+        },
+        {
+          "title": "Anticipate failure",
+          "detail": "Drive failure scenarios to understand the risk profile, test procedures and team response against simulated failures, and manage the open risks you find."
+        },
+        {
+          "title": "Learn from all operational events and metrics",
+          "detail": "Run post-incident analysis (e.g. correction-of-error reviews) and share learnings across the organization."
+        },
+        {
+          "title": "Use managed services",
+          "detail": "Reduce operational burden by using AWS managed services where possible and build procedures around interactions with them."
+        }
+      ],
+      "keyQuestions": [
+        "OPS 1. How do you determine what your priorities are?",
+        "OPS 3. How does your organizational culture support your business outcomes?",
+        "OPS 4. How do you implement observability in your workload?",
+        "OPS 5. How do you reduce defects, ease remediation, and improve flow into production?",
+        "OPS 6. How do you mitigate deployment risks?",
+        "OPS 7. How do you know that you are ready to support a workload?",
+        "OPS 10. How do you manage workload and operations events?",
+        "OPS 11. How do you evolve operations?"
+      ],
+      "keyServices": [
+        "cloudwatch",
+        "x-ray",
+        "cloudformation",
+        "cdk",
+        "systems-manager",
+        "codepipeline",
+        "codebuild",
+        "config",
+        "cloudtrail",
+        "well-architected-tool",
+        "fault-injection-service"
+      ],
+      "antiPatterns": [
+        "Manual, console-driven (\"ClickOps\") changes to production with no infrastructure as code",
+        "Large, infrequent \"big bang\" releases with no automated rollback",
+        "Monitoring only infrastructure metrics (CPU) instead of business KPIs and customer experience",
+        "Runbooks that exist only in someone's head or are never exercised in game days",
+        "No post-incident review, so the same failure recurs",
+        "Alert fatigue: paging on every metric without clear ownership or actionability"
+      ]
+    },
+    {
+      "id": "security",
+      "name": "Security",
+      "summary": "The ability to protect data, systems and assets while taking advantage of cloud technologies to improve your security. Best-practice areas: Security foundations, Identity and access management, Detection, Infrastructure protection, Data protection, Incident response, Application security.",
+      "designPrinciples": [
+        {
+          "title": "Implement a strong identity foundation",
+          "detail": "Apply least privilege and separation of duties, centralize identity management, and eliminate reliance on long-term static credentials."
+        },
+        {
+          "title": "Maintain traceability",
+          "detail": "Monitor, alert on and audit actions and changes in real time, and integrate logs and metrics with systems that automatically investigate and act."
+        },
+        {
+          "title": "Apply security at all layers",
+          "detail": "Defense in depth: controls at the edge, VPC, load balancer, every instance and compute service, operating system, application and code."
+        },
+        {
+          "title": "Automate security best practices",
+          "detail": "Define and manage controls as code in version-controlled templates so secure architectures scale quickly and cost-effectively."
+        },
+        {
+          "title": "Protect data in transit and at rest",
+          "detail": "Classify data by sensitivity and apply encryption, tokenization and access control as appropriate."
+        },
+        {
+          "title": "Keep people away from data",
+          "detail": "Use mechanisms and tools that reduce or eliminate direct human access to data, reducing mishandling and human error."
+        },
+        {
+          "title": "Prepare for security events",
+          "detail": "Have incident management and investigation processes, run response simulations, and automate detection, investigation and recovery."
+        }
+      ],
+      "keyQuestions": [
+        "SEC 1. How do you securely operate your workload?",
+        "SEC 2. How do you manage authentication for people and machines?",
+        "SEC 3. How do you manage permissions for people and machines?",
+        "SEC 4. How do you detect and investigate security events?",
+        "SEC 5. How do you protect your network resources?",
+        "SEC 7. How do you classify your data?",
+        "SEC 8. How do you protect your data at rest?",
+        "SEC 10. How do you anticipate, respond to, and recover from incidents?",
+        "SEC 11. How do you incorporate and validate the security properties of applications throughout the design, development, and deployment lifecycle?"
+      ],
+      "keyServices": [
+        "iam",
+        "iam-identity-center",
+        "organizations",
+        "control-tower",
+        "kms",
+        "secrets-manager",
+        "guardduty",
+        "security-hub",
+        "inspector",
+        "macie",
+        "cloudtrail",
+        "config",
+        "waf",
+        "shield",
+        "network-firewall",
+        "detective",
+        "security-lake",
+        "verified-access"
+      ],
+      "antiPatterns": [
+        "Long-lived IAM user access keys embedded in code or CI systems",
+        "Using the root user for daily operations or leaving it without MFA",
+        "Wildcard IAM policies (\"Action\": \"*\", \"Resource\": \"*\") instead of least privilege",
+        "All workloads in a single AWS account with no SCP guardrails",
+        "Security groups open to 0.0.0.0/0 on management ports",
+        "Encryption treated as optional, or no data classification",
+        "No incident response playbooks or never simulating an incident"
+      ]
+    },
+    {
+      "id": "reliability",
+      "name": "Reliability",
+      "summary": "The ability of a workload to perform its intended function correctly and consistently when expected. Best-practice areas: Foundations, Workload architecture, Change management, Failure management.",
+      "designPrinciples": [
+        {
+          "title": "Automatically recover from failure",
+          "detail": "Monitor business-value KPIs and trigger automation when thresholds are breached, so failures are notified, tracked and worked around automatically."
+        },
+        {
+          "title": "Test recovery procedures",
+          "detail": "In the cloud you can test how your workload fails and validate recovery by simulating failures or replaying past incidents."
+        },
+        {
+          "title": "Scale horizontally to increase aggregate workload availability",
+          "detail": "Replace one large resource with multiple small ones so no single failure takes the workload down, and ensure they share no common point of failure."
+        },
+        {
+          "title": "Stop guessing capacity",
+          "detail": "Monitor demand and utilization and automate adding or removing resources to avoid saturation, while managing service quotas."
+        },
+        {
+          "title": "Manage change through automation",
+          "detail": "Make infrastructure changes through automation that is itself tracked and reviewed."
+        }
+      ],
+      "keyQuestions": [
+        "REL 1. How do you manage Service Quotas and constraints?",
+        "REL 2. How do you plan your network topology?",
+        "REL 4. How do you design interactions in a distributed system to prevent failures?",
+        "REL 5. How do you design interactions in a distributed system to mitigate or withstand failures?",
+        "REL 7. How do you design your workload to adapt to changes in demand?",
+        "REL 9. How do you back up data?",
+        "REL 10. How do you use fault isolation to protect your workload?",
+        "REL 13. How do you plan for disaster recovery (DR)?"
+      ],
+      "keyServices": [
+        "route53",
+        "elb",
+        "ec2-auto-scaling",
+        "aws-backup",
+        "aurora",
+        "dynamodb",
+        "sqs",
+        "cloudwatch",
+        "global-accelerator",
+        "s3",
+        "application-recovery-controller",
+        "resilience-hub",
+        "fault-injection-service",
+        "elastic-disaster-recovery"
+      ],
+      "antiPatterns": [
+        "Single-AZ deployments or a single NAT gateway/instance for the whole VPC",
+        "Retries without exponential backoff and jitter, causing retry storms",
+        "Synchronous, tightly coupled calls chains with no timeouts or circuit breakers",
+        "Backups that are never restore-tested",
+        "Failover plans that depend on control-plane operations during a regional event",
+        "Ignoring service quotas until they cause an outage during a traffic spike",
+        "Overlapping CIDR ranges that block future peering or Transit Gateway connectivity"
+      ]
+    },
+    {
+      "id": "performance-efficiency",
+      "name": "Performance Efficiency",
+      "summary": "The ability to use cloud resources efficiently to meet performance requirements and to maintain that efficiency as demand changes and technologies evolve. Best-practice areas: Architecture selection, Compute and hardware, Data management, Networking and content delivery, Process and culture.",
+      "designPrinciples": [
+        {
+          "title": "Democratize advanced technologies",
+          "detail": "Consume complex technologies (NoSQL, media transcoding, ML) as managed services so your team focuses on product, not provisioning."
+        },
+        {
+          "title": "Go global in minutes",
+          "detail": "Deploy to multiple AWS Regions to provide lower latency and a better customer experience at minimal cost."
+        },
+        {
+          "title": "Use serverless architectures",
+          "detail": "Remove the need to run and maintain servers; managed services operate at cloud scale and can lower transactional costs."
+        },
+        {
+          "title": "Experiment more often",
+          "detail": "Virtual, automatable resources make it cheap to run comparative tests of instance types, storage and configurations."
+        },
+        {
+          "title": "Consider mechanical sympathy",
+          "detail": "Use the technology approach that aligns with your workload goals, e.g. choose databases based on data access patterns."
+        }
+      ],
+      "keyQuestions": [
+        "PERF 1. How do you select appropriate cloud resources and architecture for your workload?",
+        "PERF 2. How do you select and use compute resources in your workload?",
+        "PERF 3. How do you store, manage, and access data in your workload?",
+        "PERF 4. How do you select and configure networking resources in your workload?",
+        "PERF 5. How do your organizational practices and culture contribute to performance efficiency in your workload?"
+      ],
+      "keyServices": [
+        "cloudfront",
+        "elasticache",
+        "dynamodb",
+        "lambda",
+        "fargate",
+        "ec2",
+        "global-accelerator",
+        "compute-optimizer",
+        "aurora",
+        "cloudwatch"
+      ],
+      "antiPatterns": [
+        "Choosing one database for every access pattern (\"everything in a relational DB\")",
+        "Using the same instance family for years without benchmarking newer generations (e.g. Graviton)",
+        "Serving global users from a single Region without a CDN",
+        "No load testing before launch; discovering bottlenecks in production",
+        "Chatty cross-AZ or cross-Region calls on the hot path"
+      ]
+    },
+    {
+      "id": "cost-optimization",
+      "name": "Cost Optimization",
+      "summary": "The ability to run systems that deliver business value at the lowest price point. Best-practice areas: Practice Cloud Financial Management, Expenditure and usage awareness, Cost-effective resources, Manage demand and supply resources, Optimize over time.",
+      "designPrinciples": [
+        {
+          "title": "Implement Cloud Financial Management",
+          "detail": "Dedicate people, programs and processes to build FinOps capability, just as you would for security or operations."
+        },
+        {
+          "title": "Adopt a consumption model",
+          "detail": "Pay only for what you use and scale with business need; e.g. stopping dev/test outside working hours can save ~75% (40 vs 168 hours)."
+        },
+        {
+          "title": "Measure overall efficiency",
+          "detail": "Measure business output against the cost of delivering it (unit economics) to know the gains from optimization."
+        },
+        {
+          "title": "Stop spending money on undifferentiated heavy lifting",
+          "detail": "Let AWS handle data centers and, via managed services, OS and application management, so you focus on customers."
+        },
+        {
+          "title": "Analyze and attribute expenditure",
+          "detail": "Accurately identify and attribute cost to workload owners (tags, accounts) to measure ROI and drive optimization."
+        }
+      ],
+      "keyQuestions": [
+        "COST 1. How do you implement cloud financial management?",
+        "COST 2. How do you govern usage?",
+        "COST 3. How do you monitor your cost and usage?",
+        "COST 4. How do you decommission resources?",
+        "COST 6. How do you meet cost targets when you select resource type, size and number?",
+        "COST 7. How do you use pricing models to reduce cost?",
+        "COST 8. How do you plan for data transfer charges?",
+        "COST 9. How do you manage demand, and supply resources?"
+      ],
+      "keyServices": [
+        "cost-explorer",
+        "budgets",
+        "savings-plans",
+        "compute-optimizer",
+        "trusted-advisor",
+        "organizations",
+        "s3",
+        "ec2-auto-scaling",
+        "lambda"
+      ],
+      "antiPatterns": [
+        "No tagging strategy or account structure, so cost cannot be attributed",
+        "Buying Reserved Instances/Savings Plans before rightsizing",
+        "Running dev/test 24x7 at production size",
+        "Ignoring data transfer (NAT gateway, cross-AZ, internet egress) in designs",
+        "Keeping all data in S3 Standard forever with no lifecycle policy",
+        "Treating cost as a one-time cleanup rather than a continuous practice"
+      ]
+    },
+    {
+      "id": "sustainability",
+      "name": "Sustainability",
+      "summary": "Understanding the environmental impact of the services used, quantifying it across the workload lifecycle, and applying design principles to reduce it. Best-practice areas: Region selection, Alignment to demand, Software and architecture, Data, Hardware and services, Process and culture.",
+      "designPrinciples": [
+        {
+          "title": "Understand your impact",
+          "detail": "Measure and model the impact of your workload, including customer use and decommissioning, and track resources per unit of work as KPIs."
+        },
+        {
+          "title": "Establish sustainability goals",
+          "detail": "Set long-term goals per workload (e.g. compute and storage per transaction) and architect so growth reduces impact intensity."
+        },
+        {
+          "title": "Maximize utilization",
+          "detail": "Right-size and minimize idle resources: two hosts at 30% utilization are less efficient than one at 60%."
+        },
+        {
+          "title": "Anticipate and adopt new, more efficient hardware and software offerings",
+          "detail": "Continually evaluate and design for flexibility so you can quickly adopt more efficient options such as newer instance generations."
+        },
+        {
+          "title": "Use managed services",
+          "detail": "Shared managed services (Fargate, S3 Lifecycle, Auto Scaling) maximize utilization across customers and reduce the infrastructure needed."
+        },
+        {
+          "title": "Reduce the downstream impact of your cloud workloads",
+          "detail": "Reduce the energy and resources customers need to use your service, and avoid forcing device upgrades."
+        }
+      ],
+      "keyQuestions": [
+        "SUS 1. How do you select Regions for your workload?",
+        "SUS 2. How do you align cloud resources to your demand?",
+        "SUS 3. How do you take advantage of software and architecture patterns to support your sustainability goals?",
+        "SUS 4. How do you take advantage of data management policies and patterns to support your sustainability goals?",
+        "SUS 5. How do you select and use cloud hardware and services in your architecture to support your sustainability goals?",
+        "SUS 6. How do your organizational processes support your sustainability goals?"
+      ],
+      "keyServices": [
+        "ec2-auto-scaling",
+        "fargate",
+        "lambda",
+        "s3",
+        "compute-optimizer",
+        "ec2",
+        "cloudwatch"
+      ],
+      "antiPatterns": [
+        "Over-provisioned, always-on capacity for spiky or batch workloads",
+        "Storing and backing up data that is easy to recreate or never read",
+        "Choosing a Region only on habit without considering latency, requirements and carbon intensity",
+        "Using x86 or GPU instances where Graviton or purpose-built accelerators would do the job with less energy"
+      ]
+    }
+  ],
+  "lenses": [
+    {
+      "name": "Generative AI Lens",
+      "summary": "Best practices for foundation-model workloads across the generative AI lifecycle: model selection, prompt engineering, customization, RAG and data architecture; updated Nov 2025 with an agentic AI preamble, SageMaker HyperPod guidance and eight architecture scenarios."
+    },
+    {
+      "name": "Agentic AI Lens",
+      "summary": "Published June 2026: guidance for designing, deploying and operating agentic AI systems on AWS, from prototypes to production-grade multi-agent systems (tool access, memory, identity, guardrails, observability)."
+    },
+    {
+      "name": "Responsible AI Lens",
+      "summary": "Launched Nov 2025: helps assess and track AI workloads against responsible AI dimensions such as fairness, explainability, privacy, safety, controllability, veracity, governance and transparency."
+    },
+    {
+      "name": "Machine Learning Lens",
+      "summary": "Cloud-agnostic best practices across the ML lifecycle; updated Nov 2025 for SageMaker Unified Studio, distributed training, model customization and observability."
+    },
+    {
+      "name": "Serverless Applications Lens",
+      "summary": "Patterns for Lambda, API Gateway, Step Functions, EventBridge and DynamoDB-based applications, including event-driven design and cold-start/concurrency considerations."
+    },
+    {
+      "name": "SaaS Lens",
+      "summary": "Multi-tenant design: tenant isolation models (silo, pool, bridge), onboarding, tiering, noisy-neighbor mitigation and per-tenant cost and metrics."
+    },
+    {
+      "name": "Data Analytics Lens",
+      "summary": "Best practices for data ingestion, lakes, lakehouses, streaming and warehousing, including governance and cost-aware storage formats."
+    },
+    {
+      "name": "IoT Lens",
+      "summary": "Guidance for device provisioning, secure connectivity, telemetry ingestion, edge processing and fleet management."
+    },
+    {
+      "name": "Financial Services Industry Lens",
+      "summary": "Updated Jan 2026: regulated-workload guidance for resilience, data protection, auditability and model risk in banking, insurance and capital markets."
+    },
+    {
+      "name": "Hybrid Networking Lens",
+      "summary": "Updated Feb 2026: designing connectivity between on-premises and AWS with Direct Connect, Site-to-Site VPN, Transit Gateway and Cloud WAN."
+    },
+    {
+      "name": "Container Build Lens",
+      "summary": "Best practices for building, securing and optimizing container images and pipelines."
+    },
+    {
+      "name": "Streaming Media Lens",
+      "summary": "Updated Sept 2026: live and on-demand video ingest, processing, packaging and global delivery."
+    },
+    {
+      "name": "Digital Sovereignty Lens",
+      "summary": "Published Sept 2026: controls for data residency, operator access restriction, encryption key custody and resilience to meet sovereignty requirements."
+    },
+    {
+      "name": "Migration Lens",
+      "summary": "Best practices across the assess, mobilize and migrate phases of moving workloads to AWS."
+    },
+    {
+      "name": "DevOps Guidance",
+      "summary": "Capabilities and indicators for a DevOps Sagas model: development lifecycle, quality assurance, automated governance, observability and organizational adoption."
+    },
+    {
+      "name": "Other industry and technology lenses",
+      "summary": "HPC, SAP, Games Industry, Healthcare Industry, Life Sciences, Telco, Microsoft Workloads, Government, Connected Mobility, Mergers and Acquisitions and more; custom lenses can also be authored in the Well-Architected Tool."
+    }
+  ],
+  "drStrategies": [
+    {
+      "name": "Backup and restore",
+      "rto": "Hours (commonly <24h)",
+      "rpo": "Hours (as frequent as backups/continuous PITR allow)",
+      "cost": "$ — lowest; pay only for backup storage and cross-Region copies",
+      "description": "Back up data (and AMIs, code, configuration) and copy it to the DR Region/account; redeploy infrastructure with IaC at recovery time. Also the baseline defence against data corruption and ransomware for every other strategy. Automate and regularly test restores, since restore is a control-plane operation.",
+      "services": [
+        "aws-backup",
+        "s3",
+        "ebs",
+        "rds",
+        "dynamodb",
+        "cloudformation",
+        "cdk",
+        "codepipeline"
+      ]
+    },
+    {
+      "name": "Pilot light",
+      "rto": "Tens of minutes",
+      "rpo": "Seconds to minutes (continuous async replication)",
+      "cost": "$$ — data tier always on, compute switched off",
+      "description": "Data is continuously replicated to live data stores in the DR Region and core infrastructure is provisioned, but application servers are \"switched off\" (ideally not deployed) and must be turned on and scaled out on failover. AWS Elastic Disaster Recovery implements this pattern for server-based workloads. Use Route 53 / Amazon Application Recovery Controller (ARC) for data-plane traffic switching.",
+      "services": [
+        "aurora",
+        "dynamodb",
+        "rds",
+        "s3",
+        "route53",
+        "cloudformation",
+        "ec2-auto-scaling",
+        "aws-backup",
+        "elastic-disaster-recovery",
+        "application-recovery-controller"
+      ]
+    },
+    {
+      "name": "Warm standby",
+      "rto": "Minutes",
+      "rpo": "Seconds",
+      "cost": "$$$ — scaled-down but fully functional copy running 24x7",
+      "description": "A scaled-down, fully functional copy of production runs in the DR Region and can serve traffic immediately at reduced capacity; recovery only requires scaling up (ensure DR-Region quotas allow it). Easier to test continuously. Provisioning full capacity makes it a \"hot standby\".",
+      "services": [
+        "aurora",
+        "dynamodb",
+        "ec2-auto-scaling",
+        "elb",
+        "route53",
+        "global-accelerator",
+        "cloudformation",
+        "aws-backup",
+        "application-recovery-controller"
+      ]
+    },
+    {
+      "name": "Multi-site active/active",
+      "rto": "Near zero (real time)",
+      "rpo": "Near zero; zero with DynamoDB global tables MRSC or Aurora DSQL multi-Region (data corruption still needs backups)",
+      "cost": "$$$$ — full production capacity in 2+ Regions plus complexity",
+      "description": "The workload serves traffic from multiple Regions simultaneously, so there is no failover, only traffic being routed away from an impaired Region. Choose a write strategy: write global (Aurora Global Database, promotion in <1 min), write local (DynamoDB global tables, last-writer-wins or multi-Region strong consistency since June 2025), write partitioned, or strongly consistent multi-Region SQL with Aurora DSQL (GA May 2025). Point-in-time backups are still required.",
+      "services": [
+        "dynamodb",
+        "aurora",
+        "aurora-dsql",
+        "route53",
+        "global-accelerator",
+        "cloudfront",
+        "s3",
+        "cloudformation",
+        "aws-backup",
+        "application-recovery-controller"
+      ]
+    }
+  ],
+  "migrationStrategies": [
+    {
+      "name": "Retire",
+      "description": "Decommission or archive applications with no business value, e.g. \"zombie\" apps under 5% CPU/memory utilization or with no inbound connections for 90 days.",
+      "example": "Portfolio discovery finds 40 internal reporting servers with no logins in 90 days; archive their data to S3 Glacier and shut them down instead of migrating."
+    },
+    {
+      "name": "Retain",
+      "description": "Keep the application in the source environment for now, due to compliance, high risk, unresolved dependencies, recent upgrades, a pending SaaS replacement, or mainframe/non-x86 platforms needing more assessment.",
+      "example": "An AS/400 manufacturing system tied to plant-floor hardware stays on premises and is reached from AWS over Direct Connect until a modernization plan exists."
+    },
+    {
+      "name": "Rehost (lift and shift)",
+      "description": "Move applications to AWS without changes, at scale, with minimal disruption; optimize after migration. Automated with AWS Application Migration Service (AWS Transform MGN), Cloud Migration Factory or VM Import/Export.",
+      "example": "Replicate 300 on-prem Windows and Linux VMs block-level to EC2 using AWS Application Migration Service, then cut over in waves."
+    },
+    {
+      "name": "Relocate",
+      "description": "Move many servers at once to a cloud version of the same platform, or move instances/objects to another VPC, Region or account, with no new hardware, rewrites or operational changes.",
+      "example": "Move a VMware vSphere estate to a VMware-based environment on AWS (e.g. Amazon Elastic VMware Service) using HCX, or move an RDS instance into a different account."
+    },
+    {
+      "name": "Repurchase (drop and shop)",
+      "description": "Replace the application with a different product, typically SaaS, to cut maintenance, infrastructure and licensing cost.",
+      "example": "Replace a self-hosted CRM with a SaaS CRM, migrate its data, and integrate authentication with the corporate IdP."
+    },
+    {
+      "name": "Replatform (lift, tinker and shift)",
+      "description": "Move to the cloud with targeted optimizations such as managed databases, containers, Graviton or Linux, without changing core architecture.",
+      "example": "Move self-managed SQL Server to Amazon RDS for SQL Server, or containerize a Java app with App2Container and run it on ECS Fargate."
+    },
+    {
+      "name": "Refactor or re-architect",
+      "description": "Re-architect using cloud-native features to improve agility, performance and scalability. Most complex and costly; AWS recommends modernizing after the migration for large programs.",
+      "example": "Break an on-prem Oracle-backed monolith into microservices on Lambda/ECS with Aurora PostgreSQL and DynamoDB, or refactor COBOL to Java with AWS Transform for mainframe."
+    }
+  ]
+}

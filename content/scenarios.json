@@ -1,0 +1,1312 @@
+{
+  "snapshotDate": "2026-09-28",
+  "sources": [
+    "https://docs.aws.amazon.com/wellarchitected/latest/framework/the-pillars-of-the-framework.html",
+    "https://docs.aws.amazon.com/whitepapers/latest/disaster-recovery-workloads-on-aws/disaster-recovery-options-in-the-cloud.html",
+    "https://docs.aws.amazon.com/prescriptive-guidance/latest/large-migration-guide/migration-strategies.html",
+    "https://aws.amazon.com/about-aws/whats-new/2025/10/amazon-bedrock-agentcore-available",
+    "https://aws.amazon.com/about-aws/whats-new/2025/12/amazon-bedrock-agentcore-policy-evaluations-preview",
+    "https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/release-notes.html",
+    "https://aws.amazon.com/about-aws/whats-new/2025/05/amazon-aurora-dsql-generally-available",
+    "https://aws.amazon.com/about-aws/whats-new/2025/06/amazon-dynamo-db-global-tables-multi-region-strong-consistency-generally-available/",
+    "https://aws.amazon.com/about-aws/whats-new/2025/12/amazon-s3-vectors-generally-available/",
+    "https://aws.amazon.com/blogs/aws/announcing-replication-support-and-intelligent-tiering-for-amazon-s3-tables/",
+    "https://aws.amazon.com/about-aws/whats-new/2025/08/amazon-application-recovery",
+    "https://aws.amazon.com/blogs/storage/introducing-aws-backup-logically-air-gapped-vault/",
+    "https://aws.amazon.com/about-aws/whats-new/2026/02/aws-backup-adds-cross-region-database-snapshot-logically-air-gapped-vaults/",
+    "https://aws.amazon.com/about-aws/whats-new/2026/03/aws-backup-logically-air-gapped-vault-amazon-eks",
+    "https://aws.amazon.com/about-aws/whats-new/2025/05/aws-transform-mainframe-generally-available",
+    "https://docs.aws.amazon.com/eks/latest/best-practices/automode.html"
+  ],
+  "scenarios": [
+    {
+      "id": "ha-three-tier-web-app",
+      "title": "Highly available three-tier web application",
+      "difficulty": "associate",
+      "tags": [
+        "reliability",
+        "web",
+        "multi-az",
+        "autoscaling"
+      ],
+      "prompt": "A retailer runs a Java web app on two on-prem servers with a single MySQL database. They want it on AWS with 99.95% availability, able to scale for seasonal peaks. Design it.",
+      "clarifyingQuestions": [
+        "What are peak vs. average requests per second, and how spiky is traffic?",
+        "Is the app stateful (server-side sessions, local file uploads)?",
+        "What RTO/RPO does the business need, and is multi-Region required or is multi-AZ enough?",
+        "Any compliance requirements (PCI for payments)?",
+        "Can the team change code, or is this a rehost?"
+      ],
+      "referenceArchitecture": "## Request flow\n1. **Route 53** alias record -> **CloudFront** (static assets from S3, caching, TLS via ACM) with **AWS WAF** managed rules.\n2. CloudFront -> internet-facing **Application Load Balancer** in public subnets across **3 AZs**.\n3. ALB -> **EC2 Auto Scaling group** (or ECS on Fargate) in private app subnets, spread across AZs; target-tracking on request count per target.\n4. App tier -> **Aurora MySQL** (writer + readers in other AZs, reader endpoint for reads); failover typically < 30-60 s.\n5. Sessions externalized to **ElastiCache (Valkey/Redis OSS)**; user uploads to **S3**.\n\n## Why each component\n- **ALB + multi-AZ ASG**: removes single points of failure; health checks replace bad instances automatically.\n- **Aurora**: 6 copies of data across 3 AZs, fast failover, up to 15 read replicas; RDS Multi-AZ is the cheaper alternative.\n- **ElastiCache**: makes the web tier stateless so it can scale in/out freely.\n- **Secrets Manager** for DB credentials with rotation; **KMS** encryption at rest; security groups chained ALB -> app -> DB.\n- **NAT gateway per AZ** to avoid a cross-AZ single point of failure for egress.\n- **CloudWatch** alarms/dashboards, **AWS Backup** for snapshots, **CloudFormation/CDK** for IaC.",
+      "services": [
+        "route53",
+        "cloudfront",
+        "waf",
+        "acm",
+        "elb",
+        "ec2",
+        "ec2-auto-scaling",
+        "aurora",
+        "elasticache",
+        "s3",
+        "secrets-manager",
+        "kms",
+        "cloudwatch",
+        "aws-backup",
+        "cloudformation"
+      ],
+      "tradeoffs": [
+        "Aurora vs RDS Multi-AZ: Aurora gives faster failover and read scaling at higher cost.",
+        "EC2 vs Fargate: EC2 keeps rehost simple and allows Savings Plans on instances; Fargate removes patching but may need containerization.",
+        "Multi-AZ only vs multi-Region: multi-AZ meets 99.95% at far lower cost; multi-Region only if regional RTO is required.",
+        "NAT gateway per AZ costs more but avoids AZ-dependency for egress."
+      ],
+      "followUps": [
+        "How would you handle a 10x flash traffic spike in 5 minutes?",
+        "How do you do zero-downtime deployments?",
+        "What changes if the business now wants regional DR with a 1-hour RTO?",
+        "How would you cut the monthly bill by 30%?"
+      ],
+      "rubric": [
+        "Clarifies traffic, state, RTO/RPO and compliance before drawing",
+        "Spreads every tier across at least 2-3 AZs with no single points of failure",
+        "Makes the web tier stateless (sessions/uploads externalized)",
+        "Applies layered security: WAF, private subnets, SG chaining, encryption, Secrets Manager",
+        "Covers observability, backups and IaC",
+        "Discusses cost levers (Savings Plans, Graviton, caching) and trade-offs"
+      ]
+    },
+    {
+      "id": "multi-region-active-active",
+      "title": "Multi-Region active-active application",
+      "difficulty": "professional",
+      "tags": [
+        "reliability",
+        "multi-region",
+        "dr",
+        "global"
+      ],
+      "prompt": "A payments-adjacent SaaS must survive a full AWS Region outage with near-zero downtime and no lost writes, while serving users in the US and Europe with low latency. Design an active-active architecture.",
+      "clarifyingQuestions": [
+        "Is RPO truly zero for all data, or only for a subset (balances vs. activity logs)?",
+        "Can data legally be replicated between US and EU (data residency)?",
+        "What write latency is acceptable? Strong consistency across Regions adds round-trip latency.",
+        "Which Regions, and are users partitioned by geography or can anyone write anywhere?",
+        "What is the budget tolerance for running full capacity in two or more Regions?"
+      ],
+      "referenceArchitecture": "## Traffic\n- **Route 53** latency-based routing with health checks (or **Global Accelerator** anycast IPs for faster, non-DNS failover) to per-Region stacks.\n- **Amazon Application Recovery Controller (ARC)** routing controls / Region switch plans to drain a Region using data-plane operations only.\n\n## Per-Region stack (identical, deployed by IaC pipelines to each Region)\n- API Gateway or ALB -> ECS/Lambda services, each Region sized to absorb full load (static stability).\n- Cells within a Region to limit blast radius.\n\n## Data\n- **Zero-RPO data**: **DynamoDB global tables with multi-Region strong consistency (MRSC, GA June 2025)** or **Aurora DSQL multi-Region clusters (GA May 2025)** for strongly consistent SQL with writable endpoints in each peered Region plus a witness Region.\n- **Eventually consistent data**: DynamoDB global tables (MREC, last-writer-wins) or Aurora Global Database (write global, promotion < 1 min).\n- **S3** Cross-Region Replication with RTC for objects.\n- **AWS Backup** cross-account/cross-Region copies for corruption and ransomware (replication copies bad writes too).\n\n## Operations\n- Per-Region CloudWatch dashboards and synthetic canaries; regular Region-evacuation game days.",
+      "services": [
+        "route53",
+        "global-accelerator",
+        "api-gateway",
+        "elb",
+        "ecs",
+        "lambda",
+        "dynamodb",
+        "aurora-dsql",
+        "aurora",
+        "s3",
+        "aws-backup",
+        "cloudwatch",
+        "codepipeline",
+        "cloudformation",
+        "application-recovery-controller"
+      ],
+      "tradeoffs": [
+        "Strong multi-Region consistency (MRSC, DSQL) gives RPO 0 but adds cross-Region latency to writes; MREC is faster but last-writer-wins can lose concurrent updates.",
+        "Route 53 DNS failover is simple but subject to client DNS caching; Global Accelerator fails over faster at extra cost.",
+        "Running each Region at 100% capacity is expensive but avoids depending on scaling (a control-plane action) during a crisis.",
+        "Aurora DSQL has PostgreSQL compatibility gaps (e.g. no foreign keys/some extensions) and optimistic concurrency; porting may require code changes."
+      ],
+      "followUps": [
+        "How do you avoid split-brain and duplicate payments during a partial failure?",
+        "How would you test that a Region can be evacuated without customer impact?",
+        "What if EU data must never leave the EU?",
+        "How do you roll out a schema change safely across Regions?"
+      ],
+      "rubric": [
+        "Pins down RPO/RTO per data class and data residency",
+        "Chooses a write strategy (write global / write local / partitioned / strongly consistent) and justifies it",
+        "Uses data-plane failover mechanisms and static stability",
+        "Keeps point-in-time backups in addition to replication",
+        "Discusses idempotency, conflict resolution and testing (game days)",
+        "Quantifies cost and complexity vs. warm standby"
+      ]
+    },
+    {
+      "id": "serverless-event-ingestion",
+      "title": "Serverless event ingestion at scale",
+      "difficulty": "associate",
+      "tags": [
+        "serverless",
+        "event-driven",
+        "scalability"
+      ],
+      "prompt": "A marketing platform receives webhook events from partners: typically 2,000/sec, bursting to 50,000/sec. Events must never be lost and are processed by several downstream consumers. Design a serverless ingestion path.",
+      "clarifyingQuestions": [
+        "What is the payload size and does ordering matter (per customer, globally, or not at all)?",
+        "Is at-least-once acceptable, requiring idempotent consumers?",
+        "What is the end-to-end latency requirement?",
+        "How do partners authenticate?",
+        "How long must raw events be retained, and for replay?"
+      ],
+      "referenceArchitecture": "## Flow\n1. Partners call **API Gateway** (HTTP/REST API) with API keys/usage plans or a Lambda/JWT authorizer; **WAF** attached.\n2. API Gateway **direct service integration** to **SQS** or **Kinesis Data Streams** (no Lambda in the synchronous path) so the API returns 202 quickly.\n3. Fan-out: publish to **EventBridge** (content-based routing rules) or **SNS -> multiple SQS queues** so each consumer scales and fails independently.\n4. Consumers: **Lambda** with SQS event source mapping (batching, partial batch failure reporting, maximum concurrency), DLQs per queue.\n5. Raw archive: **Data Firehose** -> **S3** (Parquet, partitioned) for replay and analytics; EventBridge archive/replay as an alternative.\n6. State/dedup: **DynamoDB** conditional writes keyed on event ID for idempotency.\n\n## Why\n- Queues absorb 25x bursts and protect downstream systems; Lambda scales per queue.\n- Kinesis when ordering per key or multiple replayable consumers are needed; SQS FIFO for ordering at lower throughput.\n- CloudWatch alarms on queue age and DLQ depth; X-Ray tracing.",
+      "services": [
+        "api-gateway",
+        "waf",
+        "sqs",
+        "kinesis-data-streams",
+        "eventbridge",
+        "sns",
+        "lambda",
+        "data-firehose",
+        "s3",
+        "dynamodb",
+        "cloudwatch",
+        "x-ray"
+      ],
+      "tradeoffs": [
+        "SQS standard (near-unlimited throughput, no ordering) vs Kinesis (ordered shards, replay, per-shard limits) vs SQS FIFO (ordering, lower throughput).",
+        "API Gateway direct integration avoids Lambda cost/latency but limits request transformation.",
+        "EventBridge offers rich routing but has per-Region throughput quotas to check at 50k/sec; SNS+SQS fan-out scales further.",
+        "Lambda reserved/maximum concurrency protects downstream DBs but increases queue lag during bursts."
+      ],
+      "followUps": [
+        "How do you guarantee exactly-once side effects?",
+        "A downstream consumer is down for 6 hours. What happens?",
+        "How would you let partners replay the last 7 days?",
+        "What quotas would you raise before launch?"
+      ],
+      "rubric": [
+        "Decouples the synchronous API from processing with a durable buffer",
+        "Uses fan-out so consumers are isolated",
+        "Addresses idempotency, DLQs and retries",
+        "Checks service quotas (API Gateway RPS, Lambda concurrency, EventBridge throughput)",
+        "Includes raw archive for replay and observability metrics like queue age"
+      ]
+    },
+    {
+      "id": "iot-telemetry-pipeline",
+      "title": "IoT telemetry pipeline for connected devices",
+      "difficulty": "professional",
+      "tags": [
+        "iot",
+        "streaming",
+        "time-series",
+        "analytics"
+      ],
+      "prompt": "An industrial company has 500,000 sensors sending readings every 5 seconds over MQTT. They need real-time anomaly alerts, a 90-day hot store for dashboards, and years of history for ML. Design the pipeline.",
+      "clarifyingQuestions": [
+        "Message size and total ingest rate (~100k msg/sec)? Any intermittent connectivity at the edge?",
+        "Alert latency requirement (seconds vs minutes)?",
+        "How are devices provisioned and authenticated today (X.509 certs)?",
+        "Query patterns for dashboards: per device, per site, aggregates?",
+        "Do they need to send commands back to devices (OTA, config)?"
+      ],
+      "referenceArchitecture": "## Flow\n1. Devices connect with X.509 certificates to **AWS IoT Core** (MQTT broker, device registry, shadows); **IoT Greengrass** at sites for local buffering/filtering.\n2. IoT rules route messages to **Kinesis Data Streams** (or **MSK** if they already run Kafka).\n3. **Managed Service for Apache Flink** (or Lambda for simple thresholds) computes windows and anomalies -> **EventBridge/SNS** alerts.\n4. Hot store: **Timestream** (for InfluxDB) or DynamoDB for latest-state per device -> **QuickSight/Grafana** dashboards.\n5. Cold store: **Data Firehose** -> **S3** / **S3 Tables (Iceberg)** partitioned by date/site; **Glue** catalog; **Athena** for ad hoc; **SageMaker AI** trains anomaly models.\n\n## Why\n- IoT Core handles millions of concurrent connections and per-device auth, which you would otherwise build.\n- Kinesis decouples ingestion from multiple consumers with replay.\n- Tiered storage keeps hot queries fast and history cheap; lifecycle rules move old data to colder tiers.",
+      "services": [
+        "kinesis-data-streams",
+        "msk",
+        "lambda",
+        "eventbridge",
+        "sns",
+        "timestream",
+        "dynamodb",
+        "data-firehose",
+        "s3",
+        "s3-tables",
+        "glue",
+        "athena",
+        "quicksight",
+        "sagemaker-ai",
+        "cloudwatch",
+        "iot-core",
+        "managed-flink"
+      ],
+      "tradeoffs": [
+        "Kinesis vs MSK: Kinesis is simpler and serverless-friendly; MSK suits existing Kafka ecosystems and connectors.",
+        "Edge aggregation (Greengrass) reduces cloud cost and bandwidth but adds fleet management complexity.",
+        "Timestream vs DynamoDB for hot data: Timestream offers time-series functions; DynamoDB is better for latest-value lookups.",
+        "Flink gives stateful exactly-once streaming but more operational learning than Lambda."
+      ],
+      "followUps": [
+        "How do you rotate device certificates at scale?",
+        "A site loses connectivity for a day. What happens to the data?",
+        "How do you control ingest cost as the fleet grows 10x?",
+        "How would you push a firmware update to 10% of devices first?"
+      ],
+      "rubric": [
+        "Quantifies throughput and sizes shards/partitions",
+        "Covers device identity and secure provisioning",
+        "Separates hot, warm and cold paths with appropriate stores",
+        "Addresses edge buffering and back-pressure",
+        "Considers cost of storage and ingest at scale"
+      ]
+    },
+    {
+      "id": "real-time-clickstream-analytics",
+      "title": "Real-time clickstream analytics",
+      "difficulty": "associate",
+      "tags": [
+        "analytics",
+        "streaming",
+        "personalization"
+      ],
+      "prompt": "A news site with 20M daily users wants a live dashboard of trending articles (updated every few seconds) and daily reports on user journeys. Design the clickstream analytics platform.",
+      "clarifyingQuestions": [
+        "Events per second at peak and event size?",
+        "Freshness needed for the dashboard vs. reports?",
+        "Any PII in events and consent requirements (GDPR)?",
+        "Who consumes the data: analysts with SQL, data scientists, product teams?",
+        "Is the trending signal also fed back into the site in real time?"
+      ],
+      "referenceArchitecture": "## Flow\n1. Browser/app SDK -> **API Gateway** or CloudFront-fronted collector -> **Kinesis Data Streams** (on-demand mode for unpredictable traffic).\n2. Real-time: **Managed Service for Apache Flink** sliding windows compute top-N articles -> **ElastiCache** / **DynamoDB** for the site widget, **OpenSearch** for live dashboards.\n3. Batch: **Data Firehose** converts to Parquet and writes to **S3** partitioned by hour; **Glue** crawler/catalog.\n4. **Athena** for ad hoc queries, **Redshift Serverless** for BI joins with CRM data, **QuickSight** dashboards.\n5. PII: hash/tokenize user IDs in the stream; **Lake Formation** for column-level access.",
+      "services": [
+        "api-gateway",
+        "cloudfront",
+        "kinesis-data-streams",
+        "data-firehose",
+        "elasticache",
+        "dynamodb",
+        "opensearch",
+        "s3",
+        "glue",
+        "athena",
+        "redshift",
+        "quicksight",
+        "lake-formation",
+        "managed-flink"
+      ],
+      "tradeoffs": [
+        "Kinesis on-demand vs provisioned: on-demand removes shard planning but costs more at steady high throughput.",
+        "Athena on S3 (pay per query) vs Redshift (predictable performance for heavy BI).",
+        "OpenSearch for live dashboards is powerful but must be sized and managed; QuickSight SPICE refresh may be enough for minute-level freshness."
+      ],
+      "followUps": [
+        "How do you handle late-arriving or duplicate events?",
+        "How do you honor a GDPR delete request across the lake?",
+        "How do you keep Athena costs under control?"
+      ],
+      "rubric": [
+        "Separates speed and batch layers with justification",
+        "Uses columnar formats and partitioning for cost/performance",
+        "Addresses PII, consent and access control",
+        "Sizes the stream and considers on-demand vs provisioned"
+      ]
+    },
+    {
+      "id": "data-lake-lakehouse",
+      "title": "Enterprise data lake and lakehouse",
+      "difficulty": "professional",
+      "tags": [
+        "analytics",
+        "data-lake",
+        "governance",
+        "iceberg"
+      ],
+      "prompt": "A bank has 40 source systems (Oracle, SQL Server, SaaS apps, files) and multiple analytics teams stepping on each other. Design a governed lakehouse that supports BI, data science and near-real-time CDC.",
+      "clarifyingQuestions": [
+        "Data volumes, growth and freshness per source (daily batch vs CDC)?",
+        "Which teams own which domains; centralized or data mesh operating model?",
+        "Regulatory requirements: retention, lineage, row/column-level security, encryption keys?",
+        "Existing tools (Spark, dbt, Tableau, Snowflake) to integrate or retire?",
+        "Need for ACID updates/deletes (GDPR, late corrections)?"
+      ],
+      "referenceArchitecture": "## Layers\n- **Ingest**: **DMS** CDC from Oracle/SQL Server, **Glue** connectors / AppFlow for SaaS, **DataSync/Transfer Family** for files, **MSK/Kinesis** for streams.\n- **Storage**: raw zone in **S3**; curated zones as **Apache Iceberg** tables in **S3 Tables** (managed compaction, snapshot management; Intelligent-Tiering and cross-Region replication added late 2025).\n- **Catalog and governance**: **Glue Data Catalog** + **Lake Formation** fine-grained (row/column/cell) permissions, tag-based access control; cross-account sharing to domain accounts.\n- **Processing**: **Glue** / **EMR Serverless** Spark for transforms; streaming upserts into Iceberg.\n- **Consumption**: **Athena** and **Redshift** (querying Iceberg), **QuickSight**, **SageMaker Unified Studio** as the single workspace for SQL, notebooks and ML with a business data catalog.\n- **Security**: KMS CMKs per domain, **Macie** for PII discovery, CloudTrail data events.\n\n## Why\nIceberg gives ACID, schema evolution and time travel on open formats; Lake Formation centralizes permissions while domain accounts own their data products.",
+      "services": [
+        "dms",
+        "glue",
+        "datasync",
+        "transfer-family",
+        "msk",
+        "kinesis-data-streams",
+        "s3",
+        "s3-tables",
+        "lake-formation",
+        "emr",
+        "athena",
+        "redshift",
+        "quicksight",
+        "sagemaker-unified-studio",
+        "kms",
+        "macie",
+        "cloudtrail"
+      ],
+      "tradeoffs": [
+        "S3 Tables (managed Iceberg, automatic maintenance) vs self-managed Iceberg on general-purpose buckets (more control, you run compaction).",
+        "Centralized lake vs data mesh with domain accounts: mesh scales ownership but needs strong platform standards.",
+        "Redshift for high-concurrency BI vs Athena for ad hoc, pay-per-query workloads.",
+        "Glue (serverless, simpler) vs EMR (more tuning control, cheaper at steady scale)."
+      ],
+      "followUps": [
+        "How do you implement a GDPR right-to-erasure across Iceberg tables?",
+        "How would you share data with an external partner without copying it?",
+        "How do you track lineage for regulators?",
+        "How do you stop a runaway Athena query from blowing the budget?"
+      ],
+      "rubric": [
+        "Designs zones and open table format with reasons",
+        "Puts governance (Lake Formation, KMS, Macie) at the center, not as an afterthought",
+        "Handles CDC and ACID updates/deletes",
+        "Addresses operating model (central vs mesh) and multi-account layout",
+        "Discusses cost controls (partitioning, workgroups, lifecycle, tiering)"
+      ]
+    },
+    {
+      "id": "genai-rag-chatbot-bedrock",
+      "title": "GenAI RAG chatbot on Amazon Bedrock",
+      "difficulty": "associate",
+      "tags": [
+        "genai",
+        "rag",
+        "bedrock",
+        "security"
+      ],
+      "prompt": "An insurer wants an internal assistant that answers employee questions from 2 million policy documents in SharePoint and S3, with citations, respecting document permissions. Design it on AWS.",
+      "clarifyingQuestions": [
+        "How many users and queries per day; latency target per answer?",
+        "Must answers respect per-document ACLs from SharePoint?",
+        "How often do documents change?",
+        "Hallucination tolerance: must every answer cite sources? Any regulated advice?",
+        "Build vs buy: is a managed assistant (Amazon Q Business) acceptable?"
+      ],
+      "referenceArchitecture": "## Option A: managed\n- **Amazon Q Business** with SharePoint and S3 connectors syncs content and ACLs, uses IAM Identity Center for user identity, returns cited answers. Fastest path.\n\n## Option B: custom RAG\n1. **Ingestion**: S3 event / scheduled sync -> **Bedrock Knowledge Bases** (parsing, chunking strategy, embeddings with Titan/Cohere embed models).\n2. **Vector store**: **S3 Vectors** (GA Dec 2025, low-cost, up to 2B vectors per index) or **OpenSearch Serverless** for hybrid/keyword search and lower latency; metadata filters carry ACL groups.\n3. **Query**: Web app (Cognito or Identity Center auth) -> **API Gateway** -> **Lambda** -> Bedrock **RetrieveAndGenerate** with metadata filter on the user's groups -> model (e.g. Claude or Nova) returns answer + citations.\n4. **Guardrails**: **Bedrock Guardrails** for PII redaction, denied topics, contextual grounding checks.\n5. **Ops**: model invocation logging to S3/CloudWatch, conversation history in **DynamoDB**, evaluation with Bedrock evaluations, cost via token metrics.",
+      "services": [
+        "amazon-q-business",
+        "iam-identity-center",
+        "bedrock",
+        "s3",
+        "opensearch",
+        "api-gateway",
+        "lambda",
+        "cognito",
+        "dynamodb",
+        "cloudwatch",
+        "kms",
+        "nova"
+      ],
+      "tradeoffs": [
+        "Amazon Q Business (fast, ACL-aware connectors, less control) vs custom Bedrock RAG (full control over prompts, models, UI).",
+        "S3 Vectors (cheapest, sub-second to ~100 ms) vs OpenSearch Serverless (hybrid search, lower latency, higher baseline cost).",
+        "Larger models give better answers but higher latency and token cost; use model routing or smaller models for simple queries.",
+        "Chunk size and overlap trade retrieval precision vs context completeness."
+      ],
+      "followUps": [
+        "How do you measure answer quality and detect regressions when you change the model?",
+        "How do you prevent prompt injection from content inside documents?",
+        "How would you reduce cost per query by 50%?",
+        "A document is deleted; how fast is it gone from answers?"
+      ],
+      "rubric": [
+        "Considers the buy option before building",
+        "Enforces document-level permissions at retrieval time",
+        "Explains chunking, embeddings and vector store choice",
+        "Includes guardrails, grounding/citations and evaluation",
+        "Addresses data privacy (data not used for training, KMS, VPC endpoints) and token cost"
+      ]
+    },
+    {
+      "id": "agentic-ai-agentcore",
+      "title": "Agentic AI customer-service agent with AgentCore",
+      "difficulty": "professional",
+      "tags": [
+        "genai",
+        "agents",
+        "agentcore",
+        "security"
+      ],
+      "prompt": "A telco wants an AI agent that can look up a customer's bill, change their plan, and open a support ticket by calling internal APIs, across chat and voice. Design a production-grade agent platform.",
+      "clarifyingQuestions": [
+        "Which actions are read-only vs state-changing, and which need human approval?",
+        "How does the agent act on behalf of the authenticated customer (delegated identity)?",
+        "Existing agent framework (Strands, LangGraph, CrewAI) or greenfield?",
+        "Session length and memory requirements (remember preferences across sessions?)",
+        "Compliance: call recording, PII handling, audit of every tool call?"
+      ],
+      "referenceArchitecture": "## Components (Amazon Bedrock AgentCore, GA Oct 2025)\n- **AgentCore Runtime**: serverless, session-isolated hosting for the agent (any framework, any model), long-running sessions up to 8 hours, A2A protocol support.\n- **AgentCore Gateway**: turns internal REST APIs and Lambda functions into MCP tools with a single secure endpoint.\n- **AgentCore Identity**: workload identity for the agent plus OAuth token vault so it calls APIs on behalf of the signed-in user (inbound auth via Cognito/enterprise IdP).\n- **AgentCore Policy** (Cedar rules evaluated at the Gateway, outside the prompt): e.g. plan changes only for the caller's own account, refunds above a limit require human approval.\n- **AgentCore Memory**: short-term session memory and long-term preferences with fine-grained access control.\n- **AgentCore Observability** (OpenTelemetry -> CloudWatch) and **Evaluations** for quality.\n- Models from **Bedrock** (e.g. Claude, Nova) with **Guardrails**.\n\n## Flow\nChat/voice front end -> Cognito auth -> AgentCore Runtime agent -> reasons with Bedrock model -> calls tools via Gateway (Policy check, Identity token exchange) -> internal billing/CRM APIs (Lambda / API Gateway / VPC Lattice services) -> Step Functions for multi-step changes needing approval.",
+      "services": [
+        "bedrock-agentcore",
+        "bedrock",
+        "nova",
+        "cognito",
+        "lambda",
+        "api-gateway",
+        "vpc-lattice",
+        "step-functions",
+        "dynamodb",
+        "cloudwatch",
+        "cloudtrail",
+        "kms"
+      ],
+      "tradeoffs": [
+        "AgentCore (framework-agnostic, you own the agent code) vs Bedrock Agents (more managed, less flexible).",
+        "Single agent with many tools vs multi-agent (supervisor + specialists): multi-agent isolates domains but adds latency and cost.",
+        "Deterministic workflow (Step Functions) for regulated actions vs free-form agent reasoning.",
+        "Enforcing authorization in Policy/Gateway rather than in the prompt is more robust but requires modeling permissions explicitly."
+      ],
+      "followUps": [
+        "How do you stop the agent changing another customer's plan via prompt injection?",
+        "How do you evaluate the agent before each release?",
+        "How do you cap cost from runaway reasoning loops?",
+        "How would you add a human handoff?"
+      ],
+      "rubric": [
+        "Separates reasoning from authorization; tool permissions enforced outside the LLM",
+        "Handles delegated user identity and least privilege for tools",
+        "Covers memory, session isolation and PII",
+        "Includes observability, evaluation and human-in-the-loop for risky actions",
+        "Discusses latency and token cost controls"
+      ]
+    },
+    {
+      "id": "migrate-monolith-oracle",
+      "title": "Migrate an on-prem monolith and Oracle database",
+      "difficulty": "professional",
+      "tags": [
+        "migration",
+        "database",
+        "modernization"
+      ],
+      "prompt": "A logistics company runs a 15-year-old Java monolith on WebLogic with a 12 TB Oracle database. The data center lease ends in 9 months. They want to reduce Oracle licensing long term. Plan and design the migration.",
+      "clarifyingQuestions": [
+        "What downtime window is acceptable for cutover?",
+        "How much PL/SQL and Oracle-specific features (RAC, packages, Advanced Queuing) are used?",
+        "Dependencies on other systems (batch jobs, file drops, integrations)?",
+        "Team skills: Java, containers, PostgreSQL?",
+        "Is Oracle licensing BYOL-eligible, and what is the target cost?"
+      ],
+      "referenceArchitecture": "## Phase 1 (meet the deadline): rehost/replatform\n- Discovery with **Migration Hub** / Migration Evaluator; connectivity via **Direct Connect** (VPN as backup).\n- App servers rehosted to EC2 with **Application Migration Service (MGN)**.\n- Oracle -> **Amazon RDS for Oracle** (or RDS Custom if OS access needed) using **DMS** full load + CDC; minimal downtime cutover.\n\n## Phase 2 (modernize): replatform/refactor\n- Convert schema with **DMS Schema Conversion** (generative AI assisted) to **Aurora PostgreSQL**; DMS CDC keeps both in sync; validate with DMS data validation.\n- Strangler-fig: carve services off the monolith behind an ALB / API Gateway, run on **ECS Fargate**, events via **EventBridge/SQS**.\n\n## Why\nHard deadline favors rehost first and modernize after (AWS guidance for large migrations). Aurora PostgreSQL removes Oracle license cost.",
+      "services": [
+        "migration-hub",
+        "application-migration-service",
+        "dms",
+        "direct-connect",
+        "site-to-site-vpn",
+        "ec2",
+        "rds",
+        "aurora",
+        "ecs",
+        "fargate",
+        "elb",
+        "api-gateway",
+        "eventbridge",
+        "sqs",
+        "aws-backup"
+      ],
+      "tradeoffs": [
+        "Rehost first (low risk, meets deadline, no immediate savings) vs refactor during migration (savings sooner, high risk).",
+        "RDS for Oracle (managed, still licensed) vs Aurora PostgreSQL (no license, conversion effort for PL/SQL).",
+        "Big-bang cutover vs phased with bidirectional sync."
+      ],
+      "followUps": [
+        "How do you migrate 12 TB with a 4-hour window?",
+        "How do you validate data consistency after cutover?",
+        "Which parts of the monolith would you extract first and why?",
+        "What is your rollback plan?"
+      ],
+      "rubric": [
+        "Uses 7 Rs vocabulary and a phased plan tied to the deadline",
+        "Chooses the right tools (MGN, DMS + CDC, Schema Conversion)",
+        "Addresses network connectivity and data transfer time",
+        "Includes cutover, validation and rollback plans",
+        "Quantifies licensing and operational savings"
+      ]
+    },
+    {
+      "id": "hybrid-networking-100-vpcs",
+      "title": "Hybrid networking for 100+ VPCs across accounts",
+      "difficulty": "professional",
+      "tags": [
+        "networking",
+        "multi-account",
+        "hybrid"
+      ],
+      "prompt": "An enterprise has 150 VPCs across 60 accounts in three Regions, peered ad hoc, plus two data centers. Connectivity is a mess. Design a scalable hub-and-spoke network with centralized inspection and on-prem connectivity.",
+      "clarifyingQuestions": [
+        "Bandwidth and latency needs to on-prem; is there existing Direct Connect?",
+        "Is there overlapping IP space?",
+        "Which traffic must be inspected (egress, east-west, ingress)?",
+        "Segmentation needs: prod/non-prod/PCI isolation?",
+        "Who owns the network: central team or app teams?"
+      ],
+      "referenceArchitecture": "## Core\n- **Transit Gateway** per Region in a network account, shared with **RAM**; route tables per segment (prod, non-prod, shared, inspection). Inter-Region TGW peering, or **Cloud WAN** with a global policy for segments across Regions.\n- **Direct Connect** (2 locations, 2 connections each for maximum resiliency) -> Direct Connect gateway -> TGW; **Site-to-Site VPN** as backup.\n- **IPAM** to allocate non-overlapping CIDRs; PrivateLink/NAT for overlapping legacy ranges.\n\n## Inspection\n- Inspection VPC with **Network Firewall** (TGW appliance mode) for east-west and egress; centralized egress with NAT gateways.\n- Ingress via per-app ALBs with **WAF** or a centralized ingress VPC.\n\n## Service connectivity\n- **VPC Lattice** for app-to-app service connectivity with auth policies across accounts, avoiding IP routing for many service calls.\n- **PrivateLink** interface endpoints for AWS services, shared via Route 53 Resolver rules; **Route 53 Resolver** inbound/outbound endpoints for hybrid DNS.",
+      "services": [
+        "transit-gateway",
+        "cloud-wan",
+        "direct-connect",
+        "site-to-site-vpn",
+        "network-firewall",
+        "vpc",
+        "vpc-lattice",
+        "privatelink",
+        "route53",
+        "waf",
+        "elb",
+        "organizations"
+      ],
+      "tradeoffs": [
+        "Transit Gateway (regional, you manage peering and routes) vs Cloud WAN (global policy-driven segments, higher per-attachment cost).",
+        "Centralized inspection simplifies policy but adds data processing cost and a potential bottleneck.",
+        "VPC Lattice (service-level, IAM auth, no CIDR concerns) vs TGW routing (any protocol, network-level).",
+        "VPC peering is cheapest for high-volume pairs but does not scale (no transitive routing)."
+      ],
+      "followUps": [
+        "How do you migrate from peering to TGW with no downtime?",
+        "What is the Direct Connect resiliency model you would choose and why?",
+        "How do you handle DNS for 150 VPCs and on-prem?",
+        "How do you control TGW data processing cost?"
+      ],
+      "rubric": [
+        "Proposes hub-and-spoke with segmentation via route tables/segments",
+        "Designs resilient Direct Connect with VPN backup",
+        "Addresses IP planning (IPAM) and overlapping CIDRs",
+        "Centralized inspection and egress with cost awareness",
+        "Covers hybrid DNS and service-level connectivity options"
+      ]
+    },
+    {
+      "id": "multi-account-landing-zone",
+      "title": "Multi-account landing zone and governance",
+      "difficulty": "professional",
+      "tags": [
+        "governance",
+        "security",
+        "multi-account"
+      ],
+      "prompt": "A fast-growing startup has everything in 3 AWS accounts with shared admin users. After an audit finding, they need a governed multi-account setup that still lets 40 teams move fast. Design it.",
+      "clarifyingQuestions": [
+        "Compliance frameworks in scope (SOC 2, PCI, HIPAA)?",
+        "Corporate identity provider (Okta, Entra ID, Google)?",
+        "How are teams organized, and do they need sandboxes?",
+        "Regions allowed and data residency?",
+        "Budget ownership model: chargeback per team?"
+      ],
+      "referenceArchitecture": "## Structure\n- **Control Tower** landing zone on **Organizations**: management account (billing only), Security OU (log archive, audit/security tooling accounts), Infrastructure OU (network, shared services), Workloads OU (prod/non-prod per team), Sandbox OU, Suspended OU.\n- **Account Factory** (or AFT with Terraform) vends accounts with baseline VPC, roles and budgets.\n\n## Guardrails\n- Preventive: **SCPs** (deny leaving org, deny disabling CloudTrail/GuardDuty, Region deny), **RCPs**/declarative policies, **permission boundaries**.\n- Detective: **Config** rules and conformance packs, Control Tower controls, **Security Hub** CSPM standards aggregated in the audit account.\n- Proactive: CloudFormation hooks.\n\n## Identity and logging\n- **IAM Identity Center** federated with the corporate IdP; permission sets per role; no IAM users.\n- Organization **CloudTrail** to the log archive (S3 Object Lock), **GuardDuty**, **Inspector**, **Macie** with delegated admin; **Security Lake** for OCSF-normalized logs.\n\n## Cost\n- Tag policies, **Budgets** per account, **Cost Explorer** and cost categories for chargeback.",
+      "services": [
+        "control-tower",
+        "organizations",
+        "iam-identity-center",
+        "iam",
+        "config",
+        "security-hub",
+        "cloudtrail",
+        "guardduty",
+        "inspector",
+        "macie",
+        "security-lake",
+        "s3",
+        "budgets",
+        "cost-explorer",
+        "service-catalog",
+        "cloudformation"
+      ],
+      "tradeoffs": [
+        "Control Tower (opinionated, fast) vs custom Organizations setup (flexible, more work).",
+        "Strict SCPs improve security but can block teams; balance with sandbox OUs and exception processes.",
+        "Account per team per environment increases isolation but adds account sprawl to manage."
+      ],
+      "followUps": [
+        "How do you give break-glass access?",
+        "How do you migrate existing workloads from the 3 legacy accounts?",
+        "How do you stop a team from creating public S3 buckets?",
+        "How do you detect and remediate drift?"
+      ],
+      "rubric": [
+        "Proposes a clear OU/account structure with purpose per account",
+        "Uses federated identity via Identity Center with no long-lived users",
+        "Combines preventive, detective and proactive guardrails",
+        "Centralizes immutable logging and security tooling with delegated admins",
+        "Includes account vending and cost governance"
+      ]
+    },
+    {
+      "id": "dr-regulated-bank",
+      "title": "Disaster recovery for a regulated bank",
+      "difficulty": "professional",
+      "tags": [
+        "dr",
+        "reliability",
+        "compliance",
+        "financial-services"
+      ],
+      "prompt": "A bank's core customer-facing banking platform must meet a regulator-mandated RTO of 2 hours and RPO of 5 minutes for a regional failure, and prove it with annual tests. Design the DR strategy.",
+      "clarifyingQuestions": [
+        "Which components are in scope (online banking, payments, batch)?",
+        "Are there data residency constraints on the DR Region?",
+        "What are current dependencies on on-prem systems?",
+        "How is failover decided (automatic vs executive decision)?",
+        "Budget: can they afford full active-active?"
+      ],
+      "referenceArchitecture": "## Strategy: warm standby (meets 2h/5min with margin and reasonable cost)\n- Primary and DR Regions in separate accounts; identical stacks via **CloudFormation StackSets/CDK** pipelines.\n- **Data**: **Aurora Global Database** (typical lag < 1 s; managed switchover/failover), **DynamoDB global tables**, **S3 CRR with RTC**.\n- **Compute**: DR Region runs scaled-down ECS/EC2 behind ALB; quotas pre-raised for full scale.\n- **Traffic**: **Route 53** with **Application Recovery Controller** routing controls and Region switch plans (orchestrated, auditable execution reports).\n- **Backups**: **AWS Backup** with cross-account, cross-Region copies and Vault Lock / logically air-gapped vault to defend against ransomware.\n- **Secrets/keys**: multi-Region KMS keys, Secrets Manager replication.\n- **Evidence**: Resilience Hub assessments, ARC execution reports, CloudTrail for audit.\n\n## Testing\nQuarterly game days with full failover and failback; chaos testing with Fault Injection Service.",
+      "services": [
+        "aurora",
+        "dynamodb",
+        "s3",
+        "ecs",
+        "ec2",
+        "elb",
+        "route53",
+        "aws-backup",
+        "kms",
+        "secrets-manager",
+        "cloudformation",
+        "cloudtrail",
+        "cloudwatch",
+        "organizations",
+        "application-recovery-controller",
+        "resilience-hub",
+        "fault-injection-service"
+      ],
+      "tradeoffs": [
+        "Warm standby (cheaper) vs active-active (lower RTO, much higher cost/complexity).",
+        "Automatic failover risks false positives; manual, one-button failover is common for banks.",
+        "Replication protects against Region loss but not corruption; air-gapped backups are needed too."
+      ],
+      "followUps": [
+        "How do you fail back after the primary Region recovers?",
+        "How do you prove RPO compliance to the regulator?",
+        "What if the DR Region cannot scale because of capacity constraints?",
+        "How do you handle on-prem dependencies in a DR event?"
+      ],
+      "rubric": [
+        "Maps RTO/RPO to a DR strategy with justification",
+        "Uses data-plane failover and pre-provisioned capacity/quotas",
+        "Covers backups for corruption/ransomware separate from replication",
+        "Includes testing, evidence and failback",
+        "Addresses secrets, keys and IaC parity across Regions"
+      ]
+    },
+    {
+      "id": "global-media-streaming-cdn",
+      "title": "Global video streaming and content delivery",
+      "difficulty": "professional",
+      "tags": [
+        "media",
+        "cdn",
+        "performance",
+        "global"
+      ],
+      "prompt": "A sports streaming service will broadcast a live final to 5 million concurrent viewers worldwide and host a large VOD library. Design the video pipeline and delivery.",
+      "clarifyingQuestions": [
+        "Live latency target (broadcast-like 5-10 s or low-latency 2-3 s)?",
+        "Device mix and required formats (HLS, DASH), DRM requirements?",
+        "Geo-restrictions and rights windows?",
+        "Ad insertion requirements?",
+        "Origin resiliency expectations for the live event?"
+      ],
+      "referenceArchitecture": "## Live\n- Contribution feeds -> AWS Elemental MediaConnect -> MediaLive (redundant pipelines in two AZs) -> MediaPackage (HLS/DASH, DRM via SPEKE) -> **CloudFront** with Origin Shield.\n- Multi-Region redundant origins with CloudFront origin failover.\n\n## VOD\n- Uploads to **S3** -> **EventBridge** -> **Step Functions** orchestrating MediaConvert transcodes into ABR ladders -> S3 -> CloudFront.\n- Metadata/catalog in **DynamoDB**; search via **OpenSearch**.\n\n## Delivery and security\n- CloudFront signed URLs/cookies, geo-restriction, **WAF** and **Shield Advanced** for DDoS; Lambda@Edge/CloudFront Functions for token auth.\n- Pre-event capacity planning with AWS (Infrastructure Event Management), CloudWatch real-time metrics.",
+      "services": [
+        "cloudfront",
+        "s3",
+        "eventbridge",
+        "step-functions",
+        "lambda",
+        "dynamodb",
+        "opensearch",
+        "waf",
+        "shield",
+        "route53",
+        "cloudwatch"
+      ],
+      "tradeoffs": [
+        "Lower latency segments increase request volume and origin load.",
+        "Multi-CDN adds resilience but complicates tokenization and analytics.",
+        "Just-in-time packaging saves storage vs pre-packaging all formats."
+      ],
+      "followUps": [
+        "How do you protect origins from a thundering herd when the stream starts?",
+        "How would you do server-side ad insertion?",
+        "How do you monitor viewer quality of experience in real time?"
+      ],
+      "rubric": [
+        "Separates live and VOD pipelines",
+        "Uses CDN caching and Origin Shield to protect origins",
+        "Covers DRM, signed URLs, geo-restriction and DDoS protection",
+        "Plans for redundancy and pre-event load testing"
+      ]
+    },
+    {
+      "id": "ecommerce-flash-sale",
+      "title": "E-commerce flash sale",
+      "difficulty": "associate",
+      "tags": [
+        "scalability",
+        "e-commerce",
+        "caching",
+        "queues"
+      ],
+      "prompt": "A retailer runs a 10-minute flash sale of 10,000 limited-edition sneakers. Last year 2M users hit the site at once, it crashed, and it oversold. Design for this year.",
+      "clarifyingQuestions": [
+        "Peak concurrent users and expected requests per second?",
+        "Is fairness required (queue by arrival) and bot protection?",
+        "Is inventory per SKU/size? How strictly must overselling be prevented?",
+        "Payment provider latency and limits?",
+        "Is the rest of the site affected by the sale?"
+      ],
+      "referenceArchitecture": "## Flow\n1. **CloudFront** serves the product page almost entirely from cache; **WAF** Bot Control and rate-based rules.\n2. A **virtual waiting room** (e.g. AWS Virtual Waiting Room solution on API Gateway/Lambda/DynamoDB) admits users at a rate the backend can sustain.\n3. \"Reserve\" API -> **API Gateway** -> **Lambda** -> **DynamoDB** atomic conditional decrement on inventory (or reservation items with TTL) to prevent overselling; hot-key mitigation by sharding inventory counters.\n4. Successful reservations enqueue orders into **SQS**; order workers call the payment provider at a controlled rate; **Step Functions** handles reservation expiry and compensation.\n5. Notifications via **SNS**/EventBridge; **ElastiCache** for session and catalog reads.\n\n## Why\nCache and queue absorb the spike; DynamoDB conditional writes give strong correctness on the critical counter without a relational bottleneck.",
+      "services": [
+        "cloudfront",
+        "waf",
+        "api-gateway",
+        "lambda",
+        "dynamodb",
+        "sqs",
+        "step-functions",
+        "sns",
+        "elasticache",
+        "cloudwatch"
+      ],
+      "tradeoffs": [
+        "Waiting room adds user friction but protects backend and fairness.",
+        "DynamoDB conditional writes (simple, scalable) vs relational row locking (familiar but bottlenecks).",
+        "Asynchronous order confirmation improves resilience but users wait for final status."
+      ],
+      "followUps": [
+        "How do you pre-warm and load test?",
+        "How do you release inventory from abandoned carts?",
+        "How do you stop bots buying everything?"
+      ],
+      "rubric": [
+        "Identifies the hot path and protects it with caching, queuing and admission control",
+        "Guarantees no overselling with atomic operations",
+        "Covers bot mitigation and fairness",
+        "Plans load tests, quotas and observability"
+      ]
+    },
+    {
+      "id": "saas-multi-tenant-isolation",
+      "title": "SaaS multi-tenant isolation",
+      "difficulty": "professional",
+      "tags": [
+        "saas",
+        "security",
+        "multi-tenant"
+      ],
+      "prompt": "A B2B SaaS has 2,000 small customers and 20 enterprise customers who demand stronger isolation and dedicated performance. Design a tenancy model with tiered isolation and per-tenant cost visibility.",
+      "clarifyingQuestions": [
+        "What does \"isolation\" mean contractually: separate DB, separate account, separate Region?",
+        "Tenant onboarding volume and required speed?",
+        "Noisy-neighbor incidents today?",
+        "Do enterprise tenants need customer-managed keys?",
+        "How is pricing structured (tiers, usage-based)?"
+      ],
+      "referenceArchitecture": "## Tiered model\n- **Pool tier (basic)**: shared EKS/ECS services and shared **DynamoDB** tables partitioned by tenant ID; tenant context from **Cognito** JWT claims; **IAM** session policies with dynamic tenant scoping (ABAC with `dynamodb:LeadingKeys`) so code cannot read other tenants' items.\n- **Bridge tier**: shared compute, per-tenant **Aurora** schema or database.\n- **Silo tier (enterprise)**: dedicated account per tenant vended by a control plane (Organizations + CloudFormation), optional customer-managed **KMS** keys.\n\n## Control plane\n- Tenant onboarding service (**Step Functions**), tenant registry in DynamoDB, tier-based **API Gateway** usage plans and throttling to limit noisy neighbors.\n- Per-tenant metrics and cost: tenant ID in logs/metrics (**CloudWatch**), cost allocation tags and per-account billing for silos.",
+      "services": [
+        "cognito",
+        "iam",
+        "dynamodb",
+        "aurora",
+        "eks",
+        "ecs",
+        "api-gateway",
+        "organizations",
+        "cloudformation",
+        "kms",
+        "step-functions",
+        "cloudwatch",
+        "cost-explorer"
+      ],
+      "tradeoffs": [
+        "Pool is cheapest and easiest to operate but hardest to isolate; silo is strongest isolation but costly and harder to update.",
+        "Account-per-tenant simplifies cost and blast radius but increases deployment fan-out.",
+        "Enforcing isolation with IAM-scoped credentials is stronger than relying on application WHERE clauses."
+      ],
+      "followUps": [
+        "How do you deploy updates to 20 siloed tenants safely?",
+        "How do you migrate a tenant from pool to silo when they upgrade?",
+        "How do you measure cost per tenant in the pooled tier?"
+      ],
+      "rubric": [
+        "Explains silo/pool/bridge and maps tiers to them",
+        "Enforces isolation beyond application code (IAM, tenant-scoped credentials)",
+        "Addresses noisy neighbors via throttling and quotas",
+        "Covers onboarding automation and per-tenant observability and cost"
+      ]
+    },
+    {
+      "id": "cost-reduction-overspending",
+      "title": "Cost reduction for an overspending customer",
+      "difficulty": "associate",
+      "tags": [
+        "cost",
+        "finops"
+      ],
+      "prompt": "A customer's AWS bill grew from $80k to $250k per month in a year and the CFO wants a 30% reduction within a quarter without hurting reliability. How do you approach it?",
+      "clarifyingQuestions": [
+        "What are the top services and accounts by spend?",
+        "Is growth from business growth or waste? What is cost per unit of business (per order/user)?",
+        "Existing commitments (Savings Plans, RIs) and their coverage/utilization?",
+        "Are resources tagged by owner/environment?",
+        "Who has authority to change workloads?"
+      ],
+      "referenceArchitecture": "## Approach\n1. **Visibility**: Cost Explorer, Cost and Usage Reports/Data Exports into Athena, cost categories and tags; Cost Anomaly Detection; **Budgets** with alerts per account.\n2. **Quick wins (weeks)**: delete idle resources (unattached EBS, old snapshots, idle load balancers), stop non-prod out of hours with Instance Scheduler, S3 lifecycle and Intelligent-Tiering, gp2 -> gp3.\n3. **Rightsize**: **Compute Optimizer** and **Trusted Advisor** recommendations; move to Graviton; Lambda memory tuning.\n4. **Pricing models**: **Savings Plans** (Compute SP for flexibility) after rightsizing; **Spot** for stateless/batch; RDS/ElastiCache reservations.\n5. **Architecture**: reduce NAT gateway and cross-AZ data transfer (VPC gateway endpoints for S3/DynamoDB), add caching/CDN, consider serverless for spiky workloads.\n6. **Governance**: FinOps cadence, unit-cost KPIs, per-team showback.",
+      "services": [
+        "cost-explorer",
+        "budgets",
+        "compute-optimizer",
+        "trusted-advisor",
+        "savings-plans",
+        "ec2",
+        "s3",
+        "ebs",
+        "lambda",
+        "athena",
+        "cloudfront",
+        "vpc",
+        "organizations"
+      ],
+      "tradeoffs": [
+        "Savings Plans commit spend for 1 or 3 years; commit only on a rightsized baseline.",
+        "Spot is up to 90% cheaper but interruptible; use only for fault-tolerant workloads.",
+        "Aggressive rightsizing can reduce headroom; validate with load tests."
+      ],
+      "followUps": [
+        "Which would you do first: Savings Plans or rightsizing? Why?",
+        "Their NAT gateway bill is $30k/month. What do you do?",
+        "How do you keep costs from creeping back?"
+      ],
+      "rubric": [
+        "Starts with visibility and attribution before recommending changes",
+        "Sequences quick wins, rightsizing, then commitments",
+        "Considers data transfer and architectural changes, not just instance prices",
+        "Establishes ongoing FinOps governance and unit metrics"
+      ]
+    },
+    {
+      "id": "zero-trust-access",
+      "title": "Zero-trust access to internal applications",
+      "difficulty": "professional",
+      "tags": [
+        "security",
+        "zero-trust",
+        "networking"
+      ],
+      "prompt": "A company wants to retire its VPN. 8,000 employees and contractors need access to 200 internal web apps and some databases, with access decisions based on identity and device posture. Design a zero-trust approach.",
+      "clarifyingQuestions": [
+        "Identity provider and device management/posture tools in use?",
+        "Are apps HTTP only or also TCP (SSH, RDP, databases)?",
+        "Contractor access patterns and required logging?",
+        "Service-to-service access also in scope?",
+        "Compliance requirements for session recording?"
+      ],
+      "referenceArchitecture": "## User-to-app\n- **AWS Verified Access** in front of internal ALBs/ENIs: evaluates each request against Cedar policies using IdP claims (IAM Identity Center or OIDC) and device-trust signals (e.g. CrowdStrike, Jamf); supports HTTP(S) and non-HTTP (TCP) endpoints.\n- Apps stay in private subnets; no network-level VPN access.\n\n## Admin access\n- **Systems Manager Session Manager** for shell access (no SSH/bastion, sessions logged to S3/CloudWatch); **IAM Identity Center** for AWS console with short-lived credentials.\n\n## Service-to-service\n- **VPC Lattice** with IAM auth policies (SigV4) between services; **PrivateLink** for AWS services.\n\n## Visibility\n- Verified Access logs, CloudTrail and VPC flow logs into **Security Lake**; **GuardDuty** threat detection.",
+      "services": [
+        "verified-access",
+        "iam-identity-center",
+        "elb",
+        "systems-manager",
+        "vpc-lattice",
+        "privatelink",
+        "security-lake",
+        "guardduty",
+        "cloudtrail",
+        "vpc",
+        "iam"
+      ],
+      "tradeoffs": [
+        "Per-request policy evaluation improves security but adds latency and policy management effort.",
+        "Migrating 200 apps incrementally means running VPN and zero-trust in parallel for a while.",
+        "Device posture integration depends on third-party trust providers."
+      ],
+      "followUps": [
+        "How do you give a contractor access to one app for two weeks?",
+        "How do you handle legacy thick-client apps?",
+        "How do you detect a stolen session token?"
+      ],
+      "rubric": [
+        "Replaces network trust with identity + device context per request",
+        "Covers users, admins and service-to-service separately",
+        "Centralizes logging and continuous verification",
+        "Plans an incremental migration from VPN"
+      ]
+    },
+    {
+      "id": "log-aggregation-security-analytics",
+      "title": "Centralized log aggregation and security analytics",
+      "difficulty": "professional",
+      "tags": [
+        "security",
+        "logging",
+        "analytics"
+      ],
+      "prompt": "A company with 200 accounts wants a central place for security logs (CloudTrail, VPC flow logs, WAF, EKS audit, on-prem firewalls) retained for 7 years, with fast search for the last 30 days and automated threat detection.",
+      "clarifyingQuestions": [
+        "Daily log volume and growth?",
+        "Which SIEM, if any, must be integrated?",
+        "Search latency expectations for hot vs archive data?",
+        "Who needs access, and are there regional residency constraints?",
+        "Automated response expectations?"
+      ],
+      "referenceArchitecture": "## Collection\n- **Security Lake** in a delegated security account: automatically collects CloudTrail, VPC flow logs, Route 53 resolver logs, Security Hub findings, EKS audit logs across the organization; custom sources (on-prem firewalls) via Firehose, normalized to **OCSF** in Parquet on S3.\n## Detection\n- **GuardDuty** (including EKS, runtime, S3, malware protection), **Security Hub** as aggregation and posture; **Detective** for investigation graphs.\n## Analytics\n- Hot: **OpenSearch** (zero-ETL/direct query with Security Lake) or the SIEM subscriber for 30-day search.\n- Long-term: S3 lifecycle to Glacier tiers; **Athena** for ad hoc hunts.\n## Response\n- **EventBridge** rules on findings -> **Step Functions/Lambda** runbooks (isolate instance, disable key) -> SNS/ticketing.",
+      "services": [
+        "security-lake",
+        "cloudtrail",
+        "guardduty",
+        "security-hub",
+        "detective",
+        "opensearch",
+        "athena",
+        "s3",
+        "s3-glacier",
+        "data-firehose",
+        "eventbridge",
+        "step-functions",
+        "lambda",
+        "organizations"
+      ],
+      "tradeoffs": [
+        "Security Lake (OCSF, managed) vs custom log pipeline (more control, more work).",
+        "OpenSearch hot tier speeds search but costs; direct query over S3 is cheaper but slower.",
+        "Automated response speeds containment but risks false-positive disruption."
+      ],
+      "followUps": [
+        "How do you make logs tamper-proof?",
+        "How do you control ingest cost for VPC flow logs?",
+        "How would an analyst investigate a compromised IAM key?"
+      ],
+      "rubric": [
+        "Centralizes logs in a separate, locked-down account",
+        "Normalizes data and tiers storage for search vs retention",
+        "Uses managed detection and automated response",
+        "Addresses immutability, access control and cost"
+      ]
+    },
+    {
+      "id": "batch-hpc-processing",
+      "title": "Batch and HPC processing",
+      "difficulty": "associate",
+      "tags": [
+        "hpc",
+        "batch",
+        "cost",
+        "compute"
+      ],
+      "prompt": "A genomics lab needs to run 10,000 alignment jobs nightly, each 1-4 hours on 16 vCPUs, reading 50 GB input files. Results must be ready by 8 AM. Design a cost-effective platform.",
+      "clarifyingQuestions": [
+        "Are jobs independent (embarrassingly parallel) or tightly coupled (MPI)?",
+        "Can jobs tolerate interruption and checkpoint?",
+        "Input data location and total volume?",
+        "Any GPU acceleration available for the tools?",
+        "Compliance requirements for genomic data (HIPAA)?"
+      ],
+      "referenceArchitecture": "## Design\n- Input in **S3**; **FSx for Lustre** linked to the S3 bucket for high-throughput POSIX access during jobs.\n- **AWS Batch** with managed compute environments: mix of **Spot** (price-capacity-optimized allocation, many instance types) and On-Demand fallback; job queues by priority.\n- Workflow orchestration with **Step Functions** (or AWS HealthOmics workflows for genomics).\n- Container images in **ECR**; results written back to S3 with lifecycle to archive tiers.\n- For tightly coupled MPI jobs: AWS ParallelCluster with EFA and cluster placement groups.\n- KMS encryption, private subnets with S3 gateway endpoint, CloudWatch for job metrics.",
+      "services": [
+        "batch",
+        "ec2",
+        "s3",
+        "fsx",
+        "step-functions",
+        "ecr",
+        "kms",
+        "cloudwatch",
+        "vpc"
+      ],
+      "tradeoffs": [
+        "Spot cuts cost dramatically but needs retries/checkpointing; On-Demand guarantees the deadline.",
+        "FSx for Lustre gives speed but costs while running; reading directly from S3 is cheaper for sequential reads.",
+        "Batch (managed scheduling) vs self-managed Slurm cluster (more HPC control)."
+      ],
+      "followUps": [
+        "How do you guarantee the 8 AM deadline if Spot capacity is scarce?",
+        "How do you estimate cost per sample?",
+        "How would you speed up jobs with GPUs?"
+      ],
+      "rubric": [
+        "Identifies the workload shape (parallel vs tightly coupled)",
+        "Uses managed scheduling and Spot diversification with fallback",
+        "Selects storage for throughput and cost",
+        "Covers security of sensitive data and cost per job metrics"
+      ]
+    },
+    {
+      "id": "mobile-backend",
+      "title": "Mobile app backend",
+      "difficulty": "associate",
+      "tags": [
+        "mobile",
+        "serverless",
+        "api"
+      ],
+      "prompt": "A startup is launching a fitness app for iOS and Android: user sign-up with social login, workout logging with offline support, a social feed and push notifications. Design the backend.",
+      "clarifyingQuestions": [
+        "Expected users at launch and in a year?",
+        "Offline sync and conflict resolution needs?",
+        "Real-time features (live leaderboards)?",
+        "Media uploads (photos, videos)?",
+        "Team size and backend skills?"
+      ],
+      "referenceArchitecture": "## Design\n- Auth: **Cognito** user pools with social/Apple sign-in, MFA optional.\n- API: **AppSync** GraphQL (subscriptions for real-time feed/leaderboards; Amplify DataStore-style offline sync) or API Gateway + Lambda for REST.\n- Data: **DynamoDB** single-table design for users, workouts, feed items; DynamoDB Streams -> Lambda for fan-out to followers' feeds.\n- Media: pre-signed URLs to **S3**, served via **CloudFront**; image resizing by Lambda.\n- Notifications: **SNS** mobile push (APNs/FCM).\n- Ops: CloudWatch, X-Ray; IaC with CDK (or Amplify Gen 2).",
+      "services": [
+        "cognito",
+        "appsync",
+        "api-gateway",
+        "lambda",
+        "dynamodb",
+        "s3",
+        "cloudfront",
+        "sns",
+        "cloudwatch",
+        "x-ray",
+        "cdk"
+      ],
+      "tradeoffs": [
+        "AppSync GraphQL (real-time, offline) vs REST API Gateway (simpler, familiar).",
+        "Fan-out-on-write feeds are fast to read but costly for users with many followers; hybrid for celebrities.",
+        "Serverless keeps cost near zero at launch but needs attention to cold starts and concurrency."
+      ],
+      "followUps": [
+        "How do you handle a user with 1 million followers?",
+        "How do you do schema changes without breaking old app versions?",
+        "How do you protect the API from abuse?"
+      ],
+      "rubric": [
+        "Uses managed auth with social login",
+        "Designs the data model around access patterns",
+        "Covers offline/real-time needs, media handling and push",
+        "Keeps costs aligned with a startup and scales automatically"
+      ]
+    },
+    {
+      "id": "ml-training-inference-platform",
+      "title": "ML training and inference platform",
+      "difficulty": "professional",
+      "tags": [
+        "ml",
+        "mlops",
+        "sagemaker"
+      ],
+      "prompt": "A fintech has 30 data scientists training fraud models on laptops and deploying via manual scripts. Design an ML platform for governed training, real-time inference under 50 ms, and model monitoring.",
+      "clarifyingQuestions": [
+        "Model types and sizes (XGBoost vs deep learning vs foundation-model fine-tuning)?",
+        "Inference volume and latency SLA?",
+        "Feature freshness requirements (real-time features)?",
+        "Regulatory explainability and model risk management needs?",
+        "Existing tooling (MLflow, Kubeflow)?"
+      ],
+      "referenceArchitecture": "## Platform\n- **SageMaker Unified Studio** / SageMaker AI domains per team in separate accounts; data from the lake via Lake Formation.\n- Features: SageMaker Feature Store (online for low-latency lookups, offline in S3).\n- Training: SageMaker training jobs with managed Spot, experiment tracking with managed MLflow; HyperPod for large distributed training.\n- CI/CD: SageMaker Pipelines + Model Registry with approval gates; **CodePipeline** promotes to staging/prod accounts.\n- Inference: SageMaker real-time endpoints with auto scaling (multi-model endpoints for many small models); shadow tests before rollout.\n- Monitoring: Model Monitor for data/model drift, Clarify for bias/explainability, CloudWatch alarms.\n- Security: VPC-only, KMS, no internet access from notebooks.",
+      "services": [
+        "sagemaker-ai",
+        "sagemaker-unified-studio",
+        "lake-formation",
+        "s3",
+        "codepipeline",
+        "cloudwatch",
+        "kms",
+        "vpc",
+        "dynamodb"
+      ],
+      "tradeoffs": [
+        "SageMaker managed endpoints vs EKS/KServe: managed is faster to operate; EKS gives more control and GPU sharing.",
+        "Real-time endpoints (low latency, always on) vs serverless inference (cheaper, cold starts) vs batch transform.",
+        "Centralized platform team vs team-owned accounts."
+      ],
+      "followUps": [
+        "How do you roll back a bad model within minutes?",
+        "How do you detect training/serving skew?",
+        "How do you explain a declined transaction to a regulator?"
+      ],
+      "rubric": [
+        "Covers the full lifecycle: data, features, training, registry, deployment, monitoring",
+        "Implements governance: approvals, lineage, explainability",
+        "Meets latency with suitable inference options",
+        "Addresses security isolation and cost (Spot, auto scaling)"
+      ]
+    },
+    {
+      "id": "mainframe-batch-modernization",
+      "title": "Legacy mainframe and batch modernization",
+      "difficulty": "professional",
+      "tags": [
+        "migration",
+        "mainframe",
+        "modernization"
+      ],
+      "prompt": "An insurer runs policy administration on an IBM z/OS mainframe: 8 million lines of COBOL, CICS online transactions, and a nightly JCL batch window that is running out of time. Propose a modernization approach on AWS.",
+      "clarifyingQuestions": [
+        "Business drivers: MIPS cost, skills shortage, agility, batch window?",
+        "Which approach: replatform (emulate), refactor (convert to Java), or reimagine?",
+        "Data stores: DB2, VSAM, IMS?",
+        "Integration points and downstream file transfers?",
+        "Risk appetite and timeline?"
+      ],
+      "referenceArchitecture": "## Approach\n- **Assess**: **AWS Transform for mainframe** (agentic AI, GA May 2025) analyzes code, dependencies and documentation, decomposes into domains and plans waves.\n- **Refactor**: AWS Transform converts COBOL/JCL to Java; runs on **ECS/EC2** (or AWS Mainframe Modernization runtime); DB2/VSAM data migrated to **Aurora PostgreSQL** with **DMS**.\n- **Batch**: JCL jobs become **AWS Batch** / **Step Functions** workflows running in parallel, removing the fixed batch window; file transfers via **Transfer Family**; data exchange via S3.\n- **Coexistence**: CDC from mainframe to AWS during transition; **Direct Connect** to the data center; incremental cutover per domain.\n- **Testing**: automated regression comparing mainframe vs. AWS outputs.",
+      "services": [
+        "ecs",
+        "ec2",
+        "aurora",
+        "dms",
+        "batch",
+        "step-functions",
+        "transfer-family",
+        "s3",
+        "direct-connect",
+        "cloudwatch",
+        "migration-hub",
+        "aws-transform"
+      ],
+      "tradeoffs": [
+        "Replatform (emulation, low risk, keeps COBOL) vs automated refactor to Java (modern stack, conversion risk) vs reimagine (highest value, highest effort).",
+        "Big-bang vs incremental by domain with data synchronization complexity.",
+        "Generated Java may not be idiomatic; plan for later refactoring."
+      ],
+      "followUps": [
+        "How do you prove functional equivalence?",
+        "How do you handle the batch window during coexistence?",
+        "How do you retrain the COBOL team?"
+      ],
+      "rubric": [
+        "Clarifies drivers and chooses a modernization pattern with justification",
+        "Uses AI-assisted assessment/refactoring tools where appropriate",
+        "Plans data migration and coexistence",
+        "Emphasizes testing, equivalence and incremental risk reduction"
+      ]
+    },
+    {
+      "id": "eks-containers-platform",
+      "title": "Containers platform on Amazon EKS",
+      "difficulty": "professional",
+      "tags": [
+        "containers",
+        "kubernetes",
+        "platform-engineering"
+      ],
+      "prompt": "A company with 60 microservices across 12 teams wants a shared internal developer platform on Kubernetes: self-service deployments, strong isolation, cost visibility and minimal cluster toil. Design it on EKS.",
+      "clarifyingQuestions": [
+        "Single shared cluster vs clusters per team/environment?",
+        "Stateful workloads on Kubernetes?",
+        "GitOps preferences (Argo CD, Flux)?",
+        "Compliance and runtime security requirements?",
+        "Traffic patterns and cost targets?"
+      ],
+      "referenceArchitecture": "## Clusters\n- Prod and non-prod EKS clusters per Region in separate accounts, provisioned via IaC; **EKS Auto Mode** manages nodes (Karpenter-based, Bottlerocket), core add-ons, load balancing and storage.\n- Namespaces per team with RBAC via EKS access entries and **EKS Pod Identity** for AWS permissions; network policies; resource quotas.\n\n## Delivery\n- GitOps (Argo CD) from repos; images built by **CodeBuild**/CI, scanned by **Inspector** in **ECR**.\n\n## Traffic and networking\n- AWS Load Balancer Controller (ALB/NLB) ingress, or **VPC Lattice** for cross-cluster service-to-service.\n\n## Operations\n- CloudWatch Container Insights / Amazon Managed Prometheus and Grafana; GuardDuty EKS runtime monitoring.\n- Cost: split cost allocation data for EKS per namespace, Spot + Graviton node pools, Compute Optimizer.",
+      "services": [
+        "eks",
+        "ec2",
+        "ecr",
+        "codebuild",
+        "inspector",
+        "elb",
+        "vpc-lattice",
+        "cloudwatch",
+        "guardduty",
+        "iam",
+        "compute-optimizer",
+        "aws-backup"
+      ],
+      "tradeoffs": [
+        "EKS Auto Mode (less toil, AWS-managed nodes, Bottlerocket only, no custom AMIs) vs self-managed Karpenter/managed node groups (full control).",
+        "Shared multi-tenant clusters are efficient but weaker isolation than cluster-per-team.",
+        "EKS vs ECS: EKS brings portability and ecosystem; ECS is simpler for AWS-only teams."
+      ],
+      "followUps": [
+        "How do you upgrade Kubernetes versions with minimal risk?",
+        "How do you prevent one team exhausting cluster resources?",
+        "How do you back up cluster state?"
+      ],
+      "rubric": [
+        "Designs tenancy and isolation (accounts, clusters, namespaces, IAM)",
+        "Reduces toil with managed node lifecycle and GitOps",
+        "Covers image security, runtime security and observability",
+        "Addresses per-team cost allocation and optimization"
+      ]
+    },
+    {
+      "id": "api-monetization-partner-apis",
+      "title": "API monetization and partner APIs",
+      "difficulty": "associate",
+      "tags": [
+        "api",
+        "security",
+        "monetization"
+      ],
+      "prompt": "A weather data company wants to sell API access to partners in tiers (free, pro, enterprise) with quotas, usage-based billing, and a developer portal. Design it.",
+      "clarifyingQuestions": [
+        "Expected request volume per tier and latency requirement?",
+        "Authentication: API keys, OAuth client credentials, mTLS for enterprise?",
+        "Billing integration (AWS Marketplace, Stripe)?",
+        "Data freshness and cacheability?",
+        "Private connectivity needs for enterprise partners?"
+      ],
+      "referenceArchitecture": "## Design\n- **API Gateway REST API** with usage plans per tier (throttle + quota) and API keys; OAuth 2.0 client-credentials via **Cognito** resource servers; mTLS custom domain for enterprise.\n- Caching: API Gateway cache or **CloudFront** in front for cacheable forecast endpoints.\n- Backend: **Lambda** reading from **DynamoDB** / **S3**.\n- Metering: access logs -> **Data Firehose** -> S3 -> **Athena** for billing aggregation; or API Gateway usage API; publish SaaS listing via AWS Marketplace metering.\n- Portal: developer portal (e.g. API Gateway portals or open-source) with Cognito sign-up.\n- Protection: **WAF** rate rules, **Shield**.\n- Enterprise private access: **PrivateLink**.",
+      "services": [
+        "api-gateway",
+        "cognito",
+        "cloudfront",
+        "lambda",
+        "dynamodb",
+        "s3",
+        "data-firehose",
+        "athena",
+        "waf",
+        "shield",
+        "privatelink",
+        "cloudwatch"
+      ],
+      "tradeoffs": [
+        "API keys are simple but are identification, not strong authentication; OAuth adds security at complexity.",
+        "REST API (usage plans, caching) vs HTTP API (cheaper, fewer features).",
+        "Caching lowers cost and latency but may serve slightly stale data."
+      ],
+      "followUps": [
+        "How do you bill accurately when requests fail?",
+        "How do you version the API without breaking partners?",
+        "A partner leaks their key. What happens?"
+      ],
+      "rubric": [
+        "Implements tiering with throttles and quotas",
+        "Chooses appropriate authentication per tier",
+        "Designs accurate metering and billing",
+        "Covers abuse protection, caching and versioning"
+      ]
+    },
+    {
+      "id": "ransomware-resilient-backup",
+      "title": "Ransomware-resilient backup and recovery",
+      "difficulty": "professional",
+      "tags": [
+        "security",
+        "backup",
+        "resilience"
+      ],
+      "prompt": "After a competitor was hit by ransomware that also deleted its backups, a healthcare company asks you to design backups that survive a fully compromised admin account and can restore critical systems within 24 hours.",
+      "clarifyingQuestions": [
+        "Which workloads are critical and their RPO/RTO?",
+        "Resource types (EC2, RDS, EFS, S3, EKS, on-prem)?",
+        "Retention requirements (HIPAA)?",
+        "Is a clean-room recovery environment required?",
+        "Who is authorized to approve recovery?"
+      ],
+      "referenceArchitecture": "## Design\n- **AWS Backup** centrally managed via Organizations backup policies.\n- **Logically air-gapped vault** in a dedicated recovery account: immutable, locked by default, AWS-owned key encryption, cannot be deleted by any principal including root within retention; cross-Region database snapshot copy directly into the vault (Feb 2026); EKS support (Mar 2026).\n- Additional copies in vaults with **Vault Lock (compliance mode)**; S3 with Object Lock and versioning.\n- **Multi-party approval** to share the vault into a clean recovery account via RAM if the org is compromised.\n- **Restore testing** schedules to validate recoverability; GuardDuty Malware Protection for backups to find clean recovery points.\n- Detection: GuardDuty, Security Hub, CloudTrail alarms on backup policy changes.\n- Runbook: isolate, identify clean recovery point, restore into a clean account, rotate credentials.",
+      "services": [
+        "aws-backup",
+        "organizations",
+        "s3",
+        "kms",
+        "guardduty",
+        "security-hub",
+        "cloudtrail",
+        "iam",
+        "ec2",
+        "rds",
+        "efs",
+        "eks"
+      ],
+      "tradeoffs": [
+        "Logically air-gapped vault gives strong isolation but restore requires sharing into an account first.",
+        "Compliance-mode Vault Lock cannot be undone; mistakes in retention become costly.",
+        "More copies improve resilience but raise storage cost; primary-backup-in-air-gapped-vault reduces duplication."
+      ],
+      "followUps": [
+        "How do you know a backup is not already encrypted by the attacker?",
+        "How do you test restore without impacting production?",
+        "What identity changes do you make so a compromised admin cannot stop backups?"
+      ],
+      "rubric": [
+        "Assumes admin compromise and designs isolation accordingly",
+        "Uses immutable, cross-account, cross-Region backups",
+        "Includes restore testing and clean-room recovery",
+        "Covers detection and incident response integration"
+      ]
+    }
+  ]
+}

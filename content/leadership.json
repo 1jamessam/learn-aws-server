@@ -1,0 +1,396 @@
+{
+  "snapshotDate": "2026-09-28",
+  "sources": [
+    "https://www.amazon.jobs/content/en/our-workplace/leadership-principles",
+    "https://www.amazon.jobs/content/en/how-we-hire/interview-loop",
+    "https://aws.amazon.com/careers/how-we-hire/",
+    "https://aws.amazon.com/blogs/training-and-certification/landing-your-early-cloud-career-role-blog-3-sharpening-your-presentation-skills/",
+    "https://aws.amazon.com/blogs/enterprise-strategy/bar-raising-as-a-principle/"
+  ],
+  "principles": [
+    {
+      "id": "customer-obsession",
+      "name": "Customer Obsession",
+      "description": "Leaders start with the customer and work backwards. They work vigorously to earn and keep customer trust. Although leaders pay attention to competitors, they obsess over customers.",
+      "whatTheyProbe": [
+        "Do you start from the customer outcome rather than the technology?",
+        "How you gather and validate customer needs (including unstated ones)",
+        "Willingness to push back on a customer request when it is not in their long-term interest",
+        "Trade-offs you made between customer needs and other constraints"
+      ],
+      "samplePrompts": [
+        "Tell me about a time you went above and beyond for a customer.",
+        "Tell me about a time a customer asked for something you believed was the wrong solution. What did you do?",
+        "Describe a time you used customer feedback to change a technical design.",
+        "Tell me about the most difficult customer you have worked with and how you earned their trust."
+      ],
+      "saAngle": "Working backwards from the customer business outcome (revenue, latency, compliance deadline) before picking services; recommending the cheaper or simpler architecture even when it means less AWS consumption; following up after go-live to confirm the outcome was achieved."
+    },
+    {
+      "id": "ownership",
+      "name": "Ownership",
+      "description": "Leaders are owners. They think long term and don’t sacrifice long-term value for short-term results. They act on behalf of the entire company, beyond just their own team. They never say “that’s not my job.”",
+      "whatTheyProbe": [
+        "Taking responsibility beyond your formal scope",
+        "Long-term thinking versus quick wins",
+        "Owning failures and fixing root causes",
+        "Acting on behalf of the whole company, not just your team"
+      ],
+      "samplePrompts": [
+        "Tell me about a time you took on something significant outside your area of responsibility.",
+        "Describe a time you made a decision that sacrificed a short-term gain for long-term value.",
+        "Tell me about a project that failed. What was your role and what did you do afterwards?",
+        "Tell me about a time you saw a problem nobody owned and fixed it."
+      ],
+      "saAngle": "Owning a customer escalation end to end even when the root cause sits with another service team; driving a Well-Architected review remediation plan to completion; building reusable assets (reference architectures, IaC modules) for the wider field team."
+    },
+    {
+      "id": "invent-and-simplify",
+      "name": "Invent and Simplify",
+      "description": "Leaders expect and require innovation and invention from their teams and always find ways to simplify. They are externally aware, look for new ideas from everywhere, and are not limited by “not invented here.” As we do new things, we accept that we may be misunderstood for long periods of time.",
+      "whatTheyProbe": [
+        "Simplifying complex systems or processes",
+        "Novel solutions and where the idea came from",
+        "Willingness to adopt ideas from outside",
+        "Persistence when an idea is misunderstood"
+      ],
+      "samplePrompts": [
+        "Tell me about the most innovative solution you designed.",
+        "Describe a time you simplified a complex process or architecture. What was the impact?",
+        "Tell me about a time you adopted an idea from outside your team or company.",
+        "Tell me about a time you pursued an idea others did not initially understand."
+      ],
+      "saAngle": "Replacing a customer’s fleet of self-managed EC2 cron jobs with EventBridge Scheduler and Lambda; collapsing a multi-hop ETL into a zero-ETL integration; building a demo or prototype (e.g., a Bedrock AgentCore agent) that makes an abstract idea concrete for the customer."
+    },
+    {
+      "id": "are-right-a-lot",
+      "name": "Are Right, A Lot",
+      "description": "Leaders are right a lot. They have strong judgment and good instincts. They seek diverse perspectives and work to disconfirm their beliefs.",
+      "whatTheyProbe": [
+        "Decision quality with incomplete data",
+        "Seeking out dissenting views",
+        "Changing your mind when evidence contradicts you",
+        "How you validate assumptions"
+      ],
+      "samplePrompts": [
+        "Tell me about a time you made a decision with incomplete information.",
+        "Describe a time you were wrong. How did you find out and what did you do?",
+        "Tell me about a time you sought out a different perspective before making a decision.",
+        "Tell me about a judgment call that others disagreed with that turned out to be right."
+      ],
+      "saAngle": "Choosing between Aurora, DynamoDB, or Aurora DSQL for a customer by testing assumptions with a proof of concept and load test rather than preference; inviting service specialists to challenge your design; documenting trade-offs so the customer can make an informed decision."
+    },
+    {
+      "id": "learn-and-be-curious",
+      "name": "Learn and Be Curious",
+      "description": "Leaders are never done learning and always seek to improve themselves. They are curious about new possibilities and act to explore them.",
+      "whatTheyProbe": [
+        "How you keep current with fast-moving technology",
+        "Learning a new domain quickly under pressure",
+        "Curiosity that led to tangible impact",
+        "Self-improvement habits"
+      ],
+      "samplePrompts": [
+        "Tell me about a time you had to learn a new technology quickly to deliver for a customer.",
+        "What is something new you learned recently and how did you apply it?",
+        "Tell me about a time curiosity led you to discover a problem or opportunity.",
+        "How do you stay current with AWS launches, and give an example of acting on one?"
+      ],
+      "saAngle": "Keeping pace with launches (e.g., Lambda durable functions, S3 Vectors, AgentCore) and turning them into customer recommendations; learning a customer’s industry (healthcare, fintech) and regulations; earning certifications and building hands-on labs."
+    },
+    {
+      "id": "hire-and-develop-the-best",
+      "name": "Hire and Develop the Best",
+      "description": "Leaders raise the performance bar with every hire and promotion. They recognize exceptional talent, and willingly move them throughout the organization. Leaders develop leaders and take seriously their role in coaching others. We work on behalf of our people to invent mechanisms for development like Career Choice.",
+      "whatTheyProbe": [
+        "Mentoring and coaching others",
+        "Raising the bar in hiring decisions",
+        "Giving difficult feedback",
+        "Building mechanisms that develop people at scale"
+      ],
+      "samplePrompts": [
+        "Tell me about a time you mentored someone. What was the outcome?",
+        "Describe a time you gave someone difficult feedback.",
+        "Tell me about a time you helped someone move to a role where they could grow, even if it hurt your team.",
+        "How have you contributed to hiring, and tell me about a time you pushed back on a hire?"
+      ],
+      "saAngle": "Enabling customer engineering teams so they can run the architecture without you (workshops, immersion days, GameDays); mentoring junior SAs; contributing to technical field communities and interview loops."
+    },
+    {
+      "id": "insist-on-the-highest-standards",
+      "name": "Insist on the Highest Standards",
+      "description": "Leaders have relentlessly high standards — many people may think these standards are unreasonably high. Leaders are continually raising the bar and drive their teams to deliver high quality products, services, and processes. Leaders ensure that defects do not get sent down the line and that problems are fixed so they stay fixed.",
+      "whatTheyProbe": [
+        "Refusing to ship low-quality work",
+        "Raising the bar for a team or process",
+        "Fixing root causes rather than symptoms",
+        "Balancing high standards with delivery"
+      ],
+      "samplePrompts": [
+        "Tell me about a time you refused to compromise on quality.",
+        "Describe a time you raised the bar for your team.",
+        "Tell me about a time you fixed a problem so that it stayed fixed.",
+        "Tell me about a time you were dissatisfied with the quality of a deliverable and what you did."
+      ],
+      "saAngle": "Insisting on security and resilience basics (least privilege, multi-AZ, backups tested by restore) before go-live; running Well-Architected reviews rigorously; writing correction-of-error (COE) style post-incident analysis with the customer."
+    },
+    {
+      "id": "think-big",
+      "name": "Think Big",
+      "description": "Thinking small is a self-fulfilling prophecy. Leaders create and communicate a bold direction that inspires results. They think differently and look around corners for ways to serve customers.",
+      "whatTheyProbe": [
+        "Vision beyond the immediate problem",
+        "Communicating a bold direction and getting buy-in",
+        "Scaling an idea",
+        "Anticipating future needs"
+      ],
+      "samplePrompts": [
+        "Tell me about a time you proposed a bold idea and how you got buy-in.",
+        "Describe your most ambitious project and its long-term impact.",
+        "Tell me about a time you looked around the corner and anticipated a customer need.",
+        "Tell me about a time you took a small request and turned it into a larger opportunity."
+      ],
+      "saAngle": "Turning a single-app migration into a multi-year modernization roadmap (landing zone, data platform, generative AI use cases); proposing a multi-Region architecture that unlocks new markets for the customer."
+    },
+    {
+      "id": "bias-for-action",
+      "name": "Bias for Action",
+      "description": "Speed matters in business. Many decisions and actions are reversible and do not need extensive study. We value calculated risk taking.",
+      "whatTheyProbe": [
+        "Acting quickly with incomplete information",
+        "Distinguishing one-way from two-way door decisions",
+        "Calculated risk-taking",
+        "Unblocking yourself and others"
+      ],
+      "samplePrompts": [
+        "Tell me about a time you had to make a decision quickly without all the data.",
+        "Describe a time you took a calculated risk. What happened?",
+        "Tell me about a time you unblocked a stalled project.",
+        "Tell me about a time you acted fast and it did not work out. What did you learn?"
+      ],
+      "saAngle": "Building a working proof of concept in days instead of debating slide architectures; unblocking a customer during a production incident; recognizing that most architecture choices (instance type, memory size) are reversible two-way doors."
+    },
+    {
+      "id": "frugality",
+      "name": "Frugality",
+      "description": "Accomplish more with less. Constraints breed resourcefulness, self-sufficiency, and invention. There are no extra points for growing headcount, budget size, or fixed expense.",
+      "whatTheyProbe": [
+        "Delivering with limited resources",
+        "Cost awareness and optimization",
+        "Resourcefulness under constraints",
+        "Avoiding unnecessary spend"
+      ],
+      "samplePrompts": [
+        "Tell me about a time you delivered a project with fewer resources than you needed.",
+        "Describe a time you significantly reduced cost.",
+        "Tell me about a time a constraint led you to a better solution.",
+        "Tell me about a time you chose not to spend money or add headcount."
+      ],
+      "saAngle": "Proactively reducing a customer’s AWS bill (rightsizing with Compute Optimizer, Savings Plans, Graviton, S3 lifecycle, gateway endpoints) even though it lowers revenue; reusing existing solutions and managed services instead of building custom tooling."
+    },
+    {
+      "id": "earn-trust",
+      "name": "Earn Trust",
+      "description": "Leaders listen attentively, speak candidly, and treat others respectfully. They are vocally self-critical, even when doing so is awkward or embarrassing. Leaders do not believe their or their team’s body odor smells of perfume. They benchmark themselves and their teams against the best.",
+      "whatTheyProbe": [
+        "Candor, including admitting mistakes",
+        "Building trust with skeptical stakeholders",
+        "Listening and respect in conflict",
+        "Delivering bad news"
+      ],
+      "samplePrompts": [
+        "Tell me about a time you had to deliver bad news to a customer or stakeholder.",
+        "Describe a time you made a mistake and how you communicated it.",
+        "Tell me about a time you built trust with someone who was skeptical of you.",
+        "Tell me about a time you received critical feedback. How did you respond?"
+      ],
+      "saAngle": "Telling a customer candidly that a service is not the right fit or that a feature is not yet available; owning a flawed recommendation; being the trusted advisor who explains trade-offs honestly rather than selling."
+    },
+    {
+      "id": "dive-deep",
+      "name": "Dive Deep",
+      "description": "Leaders operate at all levels, stay connected to the details, audit frequently, and are skeptical when metrics and anecdote differ. No task is beneath them.",
+      "whatTheyProbe": [
+        "Root-cause analysis depth",
+        "Using data to find problems",
+        "Skepticism when metrics disagree with anecdotes",
+        "Staying close to details as a leader"
+      ],
+      "samplePrompts": [
+        "Tell me about a time you debugged a difficult technical problem. Walk me through how you found the root cause.",
+        "Describe a time metrics told a different story than what people were saying.",
+        "Tell me about a time you found a problem others had missed because you went into the details.",
+        "Tell me about a time you had to learn deeply about something to make a decision."
+      ],
+      "saAngle": "Debugging a customer’s p99 latency issue by tracing through CloudFront, ALB, Lambda cold starts, and DynamoDB hot partitions with X-Ray and CloudWatch metrics; reading the VPC Flow Logs to prove where packets are dropped. Expect follow-up \"why\" questions five levels deep."
+    },
+    {
+      "id": "have-backbone-disagree-and-commit",
+      "name": "Have Backbone; Disagree and Commit",
+      "description": "Leaders are obligated to respectfully challenge decisions when they disagree, even when doing so is uncomfortable or exhausting. Leaders have conviction and are tenacious. They do not compromise for the sake of social cohesion. Once a decision is determined, they commit wholly.",
+      "whatTheyProbe": [
+        "Respectfully challenging senior stakeholders",
+        "Using data to support disagreement",
+        "Committing fully after a decision",
+        "Not compromising just to keep the peace"
+      ],
+      "samplePrompts": [
+        "Tell me about a time you strongly disagreed with your manager or a customer. What did you do?",
+        "Describe a time you disagreed with a decision but committed to it anyway.",
+        "Tell me about a time you pushed back on a senior stakeholder with data.",
+        "Tell me about a time you changed someone’s mind."
+      ],
+      "saAngle": "Pushing back on a customer CTO who wants a single-AZ deployment for a critical workload, backed by availability math and cost data, then fully supporting the final decision; challenging internal account teams on a recommendation that is not customer-centric."
+    },
+    {
+      "id": "deliver-results",
+      "name": "Deliver Results",
+      "description": "Leaders focus on the key inputs for their business and deliver them with the right quality and in a timely fashion. Despite setbacks, they rise to the occasion and never settle.",
+      "whatTheyProbe": [
+        "Delivering on commitments despite obstacles",
+        "Prioritization of key inputs",
+        "Measurable outcomes",
+        "Handling setbacks and missed goals"
+      ],
+      "samplePrompts": [
+        "Tell me about a time you delivered a project under a tight deadline.",
+        "Describe a time you faced a significant setback. How did you still deliver?",
+        "Tell me about your most significant accomplishment and how you measured success.",
+        "Tell me about a time you missed a goal. What happened and what did you learn?"
+      ],
+      "saAngle": "Landing a migration by the data-center exit date; moving a customer from proof of concept to production; tracking input metrics (workloads launched, architecture reviews completed) that lead to customer outcomes."
+    },
+    {
+      "id": "strive-to-be-earths-best-employer",
+      "name": "Strive to be Earth’s Best Employer",
+      "description": "Leaders work every day to create a safer, more productive, higher performing, more diverse, and more just work environment. They lead with empathy, have fun at work, and make it easy for others to have fun. Leaders ask themselves: Are my fellow employees growing? Are they empowered? Are they ready for what’s next? Leaders have a vision for and commitment to their employees’ personal success, whether that be at Amazon or elsewhere.",
+      "whatTheyProbe": [
+        "Empathy and inclusion",
+        "Creating an environment where others grow",
+        "Supporting colleagues through difficulty",
+        "Improving team culture and well-being"
+      ],
+      "samplePrompts": [
+        "Tell me about a time you helped create a more inclusive environment.",
+        "Describe a time you supported a teammate who was struggling.",
+        "Tell me about a time you helped someone grow toward their next role.",
+        "Tell me about a time you improved the working environment for your team."
+      ],
+      "saAngle": "Making workshops and documentation accessible to engineers of all levels; sharing credit with customer and partner engineers; sustainable on-call and escalation practices; helping peers grow into specialist or leadership roles."
+    },
+    {
+      "id": "success-and-scale-bring-broad-responsibility",
+      "name": "Success and Scale Bring Broad Responsibility",
+      "description": "We started in a garage, but we’re not there anymore. We are big, we impact the world, and we are far from perfect. We must be humble and thoughtful about even the secondary effects of our actions. Our local communities, planet, and future generations need us to be better every day. We must begin each day with a determination to make better, do better, and be better for our customers, our employees, our partners, and the world at large. And we must end every day knowing we can do even more tomorrow. Leaders create more than they consume and always leave things better than how they found them.",
+      "whatTheyProbe": [
+        "Considering secondary effects of decisions",
+        "Sustainability and societal impact",
+        "Humility at scale",
+        "Leaving things better than you found them"
+      ],
+      "samplePrompts": [
+        "Tell me about a time you considered the broader impact of a decision beyond your immediate goal.",
+        "Describe a time you made a decision that improved sustainability or reduced environmental impact.",
+        "Tell me about a time you identified an unintended consequence of your work and addressed it.",
+        "Tell me about a time you left a system, team, or process better than you found it."
+      ],
+      "saAngle": "Applying the Sustainability pillar (Graviton, right-sizing, managed services, data lifecycle) in designs; designing responsible AI controls (Bedrock Guardrails, human-in-the-loop approvals, privacy by design) for generative AI workloads that affect end users."
+    }
+  ],
+  "starTemplate": [
+    {
+      "step": "Situation",
+      "guidance": "Set the context in 2-3 sentences: the customer or team, the business stakes, and the constraint (deadline, budget, scale). Pick a recent (last 2-3 years), specific example and avoid hypotheticals."
+    },
+    {
+      "step": "Task",
+      "guidance": "State what YOU were responsible for and what success looked like. Make your ownership explicit so the interviewer can separate your role from the team."
+    },
+    {
+      "step": "Action",
+      "guidance": "Spend most of the answer here (about 60%). Describe the concrete steps you took, the options you considered, the trade-offs, and why you chose your path. Say \"I\", not \"we\". Include technical depth an SA interviewer can probe (services, metrics, data you used)."
+    },
+    {
+      "step": "Result",
+      "guidance": "Quantify the outcome: latency reduced from X to Y, cost down N%, migration finished N weeks early, customer expanded usage. Tie it back to the customer or business goal and share what you learned or would do differently."
+    },
+    {
+      "step": "Delivery tips",
+      "guidance": "Aim for 2-3 minutes per story, then expect follow-ups (\"What would you do differently?\", \"What did the data show?\"). Prepare 2 stories per Leadership Principle (about 15-20 stories that can cover multiple LPs), including at least a few failures. Be honest if you do not know; never invent details. Write stories down in bullet form and rehearse aloud."
+    }
+  ],
+  "interviewLoop": [
+    {
+      "stage": "Application and online assessments",
+      "description": "Apply on amazon.jobs. Some roles send online assessments: a Work Style Assessment on alignment with the Leadership Principles (typically 10-20 minutes) and/or a role-specific Work Sample Simulation (typically 20-60 minutes).",
+      "tips": [
+        "Tailor your resume to the job description with quantified customer and technical outcomes.",
+        "Answer the work style assessment honestly and consistently; it maps to the LPs.",
+        "Map your experience to the specific SA specialty (generalist, data, security, gen AI, migrations)."
+      ]
+    },
+    {
+      "stage": "Recruiter screen",
+      "description": "A 20-30 minute conversation with a recruiter covering your background, motivation, role fit, location, and logistics. Recruiters often include one or two behavioral questions and explain the rest of the process.",
+      "tips": [
+        "Have a crisp 2-minute \"tell me about yourself\" focused on customer-facing technical work.",
+        "Ask which LPs and technical areas the team emphasizes and whether a presentation is required.",
+        "Clarify level and role family (Associate SA, SA, Senior SA, Specialist SA)."
+      ]
+    },
+    {
+      "stage": "Phone screen (technical + behavioral)",
+      "description": "Typically a 45-60 minute video interview with a hiring manager or SA. Expect 1-2 Leadership Principle questions using STAR plus technical questions on AWS fundamentals (networking, storage, databases, security, compute) and possibly a light design scenario.",
+      "tips": [
+        "Prepare metrics and data for every story; AWS explicitly looks for quantified results.",
+        "Explain concepts at multiple levels: how would you explain VPCs to a CFO vs to an engineer?",
+        "Expect \"why\" follow-ups that test depth rather than breadth."
+      ]
+    },
+    {
+      "stage": "Interview loop (virtual onsite)",
+      "description": "Usually 4-6 back-to-back interviews of about 45-60 minutes each with future peers, managers, and a bar raiser. Each interviewer is assigned specific Leadership Principles and most sessions mix behavioral STAR questions with technical depth. The loop is a long day.",
+      "tips": [
+        "Prepare 15-20 STAR stories covering all 16 LPs; do not reuse the same story with different interviewers.",
+        "Take short notes of questions asked so you can vary examples.",
+        "Rest well the night before; sessions may be back to back."
+      ]
+    },
+    {
+      "stage": "Technical depth and system design (whiteboard)",
+      "description": "An open-ended customer scenario (e.g., design a highly available e-commerce platform, a multi-Region DR strategy, or a RAG chatbot on Bedrock). The interviewer plays the customer. You are assessed on clarifying requirements, trade-offs, security, resilience, cost, and communication, not on a single right answer.",
+      "tips": [
+        "Start with clarifying questions: users, traffic, RTO/RPO, compliance, budget, team skills.",
+        "Draw a high-level diagram first, then go deep where the interviewer steers; call out Well-Architected pillars explicitly.",
+        "Discuss alternatives and why you rejected them (e.g., DynamoDB vs Aurora), plus failure modes and cost."
+      ]
+    },
+    {
+      "stage": "Presentation (often for SA roles)",
+      "description": "Many SA loops include a presentation, often a technical topic or a past architecture, presented to a mixed audience. AWS guidance for early-career SA candidates suggests a two-minute summary on a technical topic followed by a 15-20 minute explanation with diagrams that non-technical listeners can follow, and handling questions.",
+      "tips": [
+        "Structure: hook and high-level intro, three supporting points, then a use case and next steps.",
+        "Tailor to a mixed audience: avoid jargon, explain acronyms, use diagrams, and check for understanding.",
+        "Rehearse over days, time yourself, leave room for questions, and prepare for interruptions as \"customer\" objections."
+      ]
+    },
+    {
+      "stage": "Bar raiser",
+      "description": "One loop interviewer is a Bar Raiser: a specially trained, neutral interviewer from outside the hiring team focused on long-term hiring quality. They ensure the process is fair and consistent, probe LPs deeply, facilitate the debrief, and can veto a hire.",
+      "tips": [
+        "You usually will not know who the bar raiser is; treat every interview as equally important.",
+        "Expect deep follow-ups on one story; know the details and your specific contribution.",
+        "Show you would raise the bar for the team: judgment, ownership, and learning from failure."
+      ]
+    },
+    {
+      "stage": "Debrief and decision",
+      "description": "Interviewers submit written feedback independently, then meet in a debrief led by the bar raiser to reach a hire/no-hire decision against the role level. AWS aims to respond quickly after interviews (the AWS careers site cites getting back to candidates within two business days after phone interviews).",
+      "tips": [
+        "Send a short thank-you note to your recruiter.",
+        "If not selected, ask for general feedback areas and note that you can typically reapply after a cooling-off period.",
+        "Keep notes of your stories for future loops or team matches."
+      ]
+    }
+  ]
+}

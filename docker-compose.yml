@@ -1,0 +1,15 @@
+services:
+  sa-prep:
+    build: .
+    image: james-aws:latest
+    container_name: sa-prep
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./data:/app/data
+    environment:
+      NODE_ENV: production
+      # Uncomment to require a login on top of Tailscale.
+      # APP_USER: me
+      # APP_PASSWORD: change-me
+    restart: unless-stopped
