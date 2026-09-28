@@ -1,21 +1,38 @@
 import { useMemo, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
+import { ServiceIcon } from '../components/ServiceIcon'
+import { TierBadge } from '../components/TierBadge'
 import { Empty, Page } from '../components/ui'
-import { categoryLabels, flashcards, serviceById, shuffle } from '../lib/content'
+import { byTier, categoryLabels, flashcards, serviceById, services, shuffle, tierOf } from '../lib/content'
 import type { Flashcard } from '../lib/schema'
 import { useProgress } from '../lib/progress'
 import { isDue, review } from '../lib/srs'
 
-const decks = [...new Set(flashcards.cards.map((c) => c.deck))]
+type Card = Omit<Flashcard, 'deck'> & { deck: Flashcard['deck'] | 'icons' }
+
+// "Icon drill": show the official icon, recall the service. Must-know services come first.
+const iconCards: Card[] = [...services.services].sort(byTier).map((s) => ({
+  id: `icon-${s.id}`,
+  deck: 'icons',
+  front: 'Which service is this?',
+  back: s.oneLiner,
+  serviceId: s.id,
+}))
+const allCards: Card[] = [...flashcards.cards, ...iconCards]
+const decks = ['icons', ...new Set(flashcards.cards.map((c) => c.deck))]
+const deckLabel = (d: string) => (d === 'icons' ? 'Icon drill' : categoryLabels[d] ?? d)
 
 export default function Cards() {
   const { progress, update } = useProgress()
-  const [deck, setDeck] = useState<string | null>(null)
-  const [queue, setQueue] = useState<Flashcard[] | null>(null)
+  const [params] = useSearchParams()
+  const [deck, setDeck] = useState<string | null>(params.get('deck'))
+  const [queue, setQueue] = useState<Card[] | null>(null)
   const [flipped, setFlipped] = useState(false)
   const [done, setDone] = useState(0)
 
   const counts = useMemo(() => {
-    const inDeck = flashcards.cards.filter((c) => !deck || c.deck === deck)
+    // Icon cards only appear when that deck is picked, so "All decks" stays about concepts.
+    const inDeck = deck ? allCards.filter((c) => c.deck === deck) : (flashcards.cards as Card[])
     return {
       due: inDeck.filter((c) => progress.srs[c.id] && isDue(progress.srs[c.id])),
       fresh: inDeck.filter((c) => !progress.srs[c.id]),
@@ -23,7 +40,9 @@ export default function Cards() {
   }, [deck, progress.srs])
 
   const start = () => {
-    setQueue([...shuffle(counts.due), ...shuffle(counts.fresh).slice(0, progress.newCardsPerDay)])
+    // Icon drill introduces new cards in tier order (must-know first); other decks shuffle.
+    const fresh = deck === 'icons' ? counts.fresh : shuffle(counts.fresh)
+    setQueue([...shuffle(counts.due), ...fresh.slice(0, progress.newCardsPerDay)])
     setDone(0)
     setFlipped(false)
   }
@@ -43,17 +62,32 @@ export default function Cards() {
     return (
       <Page title="Review" action={<button className="text-sm text-accent" onClick={() => setQueue(null)}>End</button>}>
         <div className="mb-2 flex justify-between text-xs muted">
-          <span>{categoryLabels[card.deck]}{card.serviceId && ` · ${serviceById.get(card.serviceId)?.name ?? ''}`}</span>
+          <span>{deckLabel(card.deck)}{card.serviceId && card.deck !== 'icons' && ` · ${serviceById.get(card.serviceId)?.name ?? ''}`}</span>
           <span>{done} done · {queue.length} left</span>
         </div>
-        <button onClick={() => setFlipped(true)} className="card flex min-h-[45vh] w-full flex-col justify-center text-left">
-          <div className="text-lg font-semibold leading-snug">{card.front}</div>
-          {flipped ? (
-            <div className="mt-4 border-t border-slate-200 pt-4 text-[16px] leading-relaxed whitespace-pre-line dark:border-slate-800">{card.back}</div>
-          ) : (
-            <div className="mt-6 text-sm muted">Tap to reveal</div>
-          )}
-        </button>
+        {card.deck === 'icons' && card.serviceId ? (
+          <button onClick={() => setFlipped(true)} className="card flex min-h-[45vh] w-full flex-col items-center justify-center gap-4 text-center">
+            <ServiceIcon id={card.serviceId} size={120} />
+            {flipped ? (
+              <div className="border-t border-slate-200 pt-4 dark:border-slate-800">
+                <div className="mb-1 text-xl font-bold">{serviceById.get(card.serviceId)?.name}</div>
+                <div className="mb-2"><TierBadge tier={tierOf(card.serviceId)} /></div>
+                <p className="text-[15px] muted">{card.back}</p>
+              </div>
+            ) : (
+              <div className="text-sm muted">Name this service, then tap to check</div>
+            )}
+          </button>
+        ) : (
+          <button onClick={() => setFlipped(true)} className="card flex min-h-[45vh] w-full flex-col justify-center text-left">
+            <div className="text-lg font-semibold leading-snug">{card.front}</div>
+            {flipped ? (
+              <div className="mt-4 border-t border-slate-200 pt-4 text-[16px] leading-relaxed whitespace-pre-line dark:border-slate-800">{card.back}</div>
+            ) : (
+              <div className="mt-6 text-sm muted">Tap to reveal</div>
+            )}
+          </button>
+        )}
         {flipped && (
           <div className="mt-4 grid grid-cols-4 gap-2">
             <button className="btn bg-rose-500/90 text-white" onClick={() => grade(0)}>Again</button>
@@ -73,7 +107,7 @@ export default function Cards() {
         <button onClick={() => setDeck(null)} className={`chip ${!deck ? 'border-accent text-accent' : ''}`}>All decks</button>
         {decks.map((d) => (
           <button key={d} onClick={() => setDeck(d)} className={`chip ${deck === d ? 'border-accent text-accent' : ''}`}>
-            {categoryLabels[d] ?? d}
+            {deckLabel(d)}
           </button>
         ))}
       </div>

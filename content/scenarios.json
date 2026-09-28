@@ -74,7 +74,9 @@
         "Applies layered security: WAF, private subnets, SG chaining, encryption, Secrets Manager",
         "Covers observability, backups and IaC",
         "Discusses cost levers (Savings Plans, Graviton, caching) and trade-offs"
-      ]
+      ],
+      "diagram": "flowchart TD\nu[Users]:::user\nr53@svc(route53)\ncf@svc(cloudfront, \"CloudFront + WAF\")\ns3@svc(s3, \"Static assets\")\nsubgraph vpc[\"VPC · private subnets in 3 AZs\"]\n  alb@svc(elb, \"ALB\")\n  asg@svc(ec2-auto-scaling, \"Auto Scaling<br/>EC2 fleet\")\n  cache@svc(elasticache, \"Sessions\")\n  auroraW@svc(aurora, \"Aurora writer\")\n  auroraR@svc(aurora, \"Readers<br/>other AZs\")\nend\nu -->|DNS| r53 --> cf\ncf -->|static| s3\ncf -->|dynamic| alb --> asg\nasg --> cache\nasg -->|writes| auroraW\nasg -->|reads| auroraR\nauroraW -.->|replication| auroraR\n",
+      "diagramCaption": "Every tier spans multiple AZs and the web tier is stateless (sessions in ElastiCache, files in S3), so the Auto Scaling group can replace or add instances freely."
     },
     {
       "id": "multi-region-active-active",
@@ -131,7 +133,9 @@
         "Keeps point-in-time backups in addition to replication",
         "Discusses idempotency, conflict resolution and testing (game days)",
         "Quantifies cost and complexity vs. warm standby"
-      ]
+      ],
+      "diagram": "flowchart TD\nu[Global users]:::user\nga@svc(global-accelerator, \"Route 53 / Global<br/>Accelerator\")\narc@svc(application-recovery-controller, \"ARC routing<br/>controls\")\nsubgraph r1[\"Region A · active\"]\n  api1@svc(api-gateway)\n  svc1@svc(ecs, \"Services\")\n  db1@svc(dynamodb, \"Global table\")\nend\nsubgraph r2[\"Region B · active\"]\n  api2@svc(api-gateway)\n  svc2@svc(ecs, \"Services\")\n  db2@svc(dynamodb, \"Global table\")\nend\nbk@svc(aws-backup, \"PITR backups<br/>other account\")\nu --> ga\narc -.->|drain Region| ga\nga -->|nearest| api1 --> svc1 --> db1\nga -->|nearest| api2 --> svc2 --> db2\ndb1 <-->|MRSC replication<br/>RPO 0| db2\ndb1 -.-> bk\n",
+      "diagramCaption": "Both Regions serve traffic at full capacity; strongly consistent replication (DynamoDB MRSC or Aurora DSQL) gives RPO 0, while backups still cover corruption."
     },
     {
       "id": "serverless-event-ingestion",
@@ -183,7 +187,9 @@
         "Addresses idempotency, DLQs and retries",
         "Checks service quotas (API Gateway RPS, Lambda concurrency, EventBridge throughput)",
         "Includes raw archive for replay and observability metrics like queue age"
-      ]
+      ],
+      "diagram": "flowchart TD\np[Partner webhooks]:::user\napigw@svc(api-gateway, \"API Gateway + WAF\")\neb@svc(eventbridge, \"Event bus<br/>+ archive\")\nq1@svc(sqs, \"Queue A\")\nq2@svc(sqs, \"Queue B\")\nf1@svc(lambda, \"Consumer A\")\nf2@svc(lambda, \"Consumer B\")\ndlq@svc(sqs, \"DLQs\")\nddb@svc(dynamodb, \"Idempotency<br/>keys\")\np -->|HTTPS| apigw\napigw -->|direct integration<br/>202 Accepted| eb\neb -->|rule| q1 --> f1\neb -->|rule| q2 --> f2\nf1 --> ddb\nf2 --> ddb\nf1 ~~~ dlq\nq1 -.->|failed| dlq\nq2 -.->|failed| dlq\n",
+      "diagramCaption": "The API only accepts and buffers; each consumer gets its own queue and DLQ so bursts and failures are isolated, and idempotency keys make at-least-once delivery safe."
     },
     {
       "id": "iot-telemetry-pipeline",
@@ -241,7 +247,9 @@
         "Separates hot, warm and cold paths with appropriate stores",
         "Addresses edge buffering and back-pressure",
         "Considers cost of storage and ingest at scale"
-      ]
+      ],
+      "diagram": "flowchart TD\ndev[500k sensors]:::user\ngg[Greengrass<br/>site gateway]:::ext\niot@svc(iot-core, \"IoT Core<br/>MQTT + X.509\")\nkds@svc(kinesis-data-streams)\nflink@svc(managed-flink, \"Flink<br/>anomalies\")\nsns@svc(sns, \"Alerts\")\nts@svc(timestream, \"Hot 90 days\")\nqs@svc(quicksight, \"Dashboards\")\nfh@svc(data-firehose)\ns3t@svc(s3-tables, \"History<br/>Iceberg\")\nath@svc(athena)\nsm@svc(sagemaker-ai, \"Model training\")\ndev -->|MQTT| gg -->|buffered| iot\niot -->|IoT rule| kds\nkds --> flink --> sns\nflink --> ts --> qs\nkds --> fh --> s3t\ns3t --> ath\ns3t --> sm\n",
+      "diagramCaption": "IoT Core handles device identity and connections; Kinesis fans the stream out to a real-time path (Flink alerts, Timestream hot store) and a cheap cold path (Iceberg on S3 for history and ML)."
     },
     {
       "id": "real-time-clickstream-analytics",
@@ -292,7 +300,9 @@
         "Uses columnar formats and partitioning for cost/performance",
         "Addresses PII, consent and access control",
         "Sizes the stream and considers on-demand vs provisioned"
-      ]
+      ],
+      "diagram": "flowchart TD\nu[Browsers / apps]:::user\ncf@svc(cloudfront, \"Collector<br/>endpoint\")\nkds@svc(kinesis-data-streams, \"Kinesis<br/>on-demand\")\nsubgraph speed[\"Speed layer · seconds\"]\n  flink@svc(managed-flink, \"Top-N windows\")\n  ddb@svc(dynamodb, \"Trending<br/>widget\")\n  os@svc(opensearch, \"Live dashboard\")\nend\nsubgraph batch[\"Batch layer · hours\"]\n  fh@svc(data-firehose, \"Firehose<br/>to Parquet\")\n  s3@svc(s3, \"Data lake\")\n  ath@svc(athena)\n  qs@svc(quicksight)\nend\nu -->|events| cf --> kds\nkds --> flink\nflink --> ddb\nflink --> os\nddb ~~~ fh\nkds --> fh --> s3 --> ath --> qs\n",
+      "diagramCaption": "One stream feeds two paths: Flink computes live trends in seconds, and Firehose lands partitioned Parquet in S3 for cheap SQL reporting."
     },
     {
       "id": "data-lake-lakehouse",
@@ -350,7 +360,9 @@
         "Handles CDC and ACID updates/deletes",
         "Addresses operating model (central vs mesh) and multi-account layout",
         "Discusses cost controls (partitioning, workgroups, lifecycle, tiering)"
-      ]
+      ],
+      "diagram": "flowchart TD\nsrc[Oracle / SQL Server<br/>SaaS / files]:::ext\ndms@svc(dms, \"DMS CDC\")\nglueI@svc(glue, \"Glue ingest\")\nsubgraph lake[\"Lakehouse storage\"]\n  raw@svc(s3, \"Raw zone\")\n  emr@svc(emr, \"EMR Serverless /<br/>Glue Spark\")\n  cur@svc(s3-tables, \"Curated<br/>Iceberg tables\")\nend\nlf@svc(lake-formation, \"Lake Formation<br/>row/column perms\")\nath@svc(athena)\nrs@svc(redshift)\nsus@svc(sagemaker-unified-studio, \"Unified Studio\")\nsrc -->|CDC| dms --> raw\nsrc -->|batch| glueI --> raw\nraw --> emr -->|upserts| cur\ncur --> lf\nlf -->|governed access| ath\nlf --> rs\nlf --> sus\n",
+      "diagramCaption": "Land raw data in S3, curate it into open Iceberg tables (ACID, time travel), and let Lake Formation govern every engine that reads it."
     },
     {
       "id": "genai-rag-chatbot-bedrock",
@@ -403,7 +415,9 @@
         "Explains chunking, embeddings and vector store choice",
         "Includes guardrails, grounding/citations and evaluation",
         "Addresses data privacy (data not used for training, KMS, VPC endpoints) and token cost"
-      ]
+      ],
+      "diagram": "flowchart TD\nu[Employee]:::user\nid@svc(iam-identity-center, \"SSO\")\napigw@svc(api-gateway)\nfn@svc(lambda, \"Orchestrator\")\nllm@svc(bedrock, \"Model +<br/>Guardrails\")\nhist@svc(dynamodb, \"Chat history\")\nsubgraph ingest[\"Ingestion\"]\n  docs@svc(s3, \"Policy docs\")\n  kb@svc(bedrock, \"Knowledge Base<br/>chunk + embed\")\n  vec@svc(opensearch, \"Vector index<br/>+ ACL metadata\")\nend\nu -->|sign in| id -->|question| apigw --> fn\nfn -->|prompt + chunks| llm\nllm -.->|answer + citations| fn\nfn --> hist\nhist ~~~ docs\ndocs -->|sync| kb -->|embeddings| vec\nfn -->|retrieve,<br/>filter by groups| vec\n",
+      "diagramCaption": "RAG = retrieve permitted chunks from a vector store (filtered by the user's groups), then ground the model's answer in them with citations and Guardrails."
     },
     {
       "id": "agentic-ai-agentcore",
@@ -456,7 +470,9 @@
         "Covers memory, session isolation and PII",
         "Includes observability, evaluation and human-in-the-loop for risky actions",
         "Discusses latency and token cost controls"
-      ]
+      ],
+      "diagram": "flowchart TD\nu[Customer<br/>chat / voice]:::user\ncog@svc(cognito, \"Sign-in\")\nsubgraph ac[\"Bedrock AgentCore\"]\n  rt@svc(bedrock-agentcore, \"Runtime<br/>agent session\")\n  mem@svc(bedrock-agentcore, \"Memory\")\n  gw@svc(bedrock-agentcore, \"Gateway + Policy<br/>Cedar rules\")\nend\nllm@svc(bedrock, \"Foundation<br/>model\")\nbill@svc(lambda, \"Billing API\")\ncrm@svc(api-gateway, \"CRM / tickets\")\nsf@svc(step-functions, \"Plan change<br/>+ approval\")\nu --> cog --> rt\nrt <-->|reason| llm\nrt <--> mem\nrt -->|tool call| gw\ngw -->|user token| bill\ngw -->|allowed| crm\ngw --> sf\n",
+      "diagramCaption": "The model decides what to do, but every tool call goes through the Gateway, where Cedar policy and the user's delegated identity decide what it is allowed to do."
     },
     {
       "id": "migrate-monolith-oracle",
@@ -510,7 +526,9 @@
         "Addresses network connectivity and data transfer time",
         "Includes cutover, validation and rollback plans",
         "Quantifies licensing and operational savings"
-      ]
+      ],
+      "diagram": "flowchart TD\nsubgraph onprem[\"On-prem DC\"]\n  app[WebLogic<br/>monolith]:::ext\n  ora[(Oracle 12 TB)]:::ext\nend\ndx@svc(direct-connect)\nsubgraph p1[\"Phase 1 · rehost\"]\n  mgn@svc(application-migration-service, \"MGN\")\n  ec2@svc(ec2, \"App on EC2\")\n  dms@svc(dms, \"DMS full load<br/>+ CDC\")\nend\nsubgraph p2[\"Phase 2 · modernize\"]\n  aur@svc(aurora, \"Aurora<br/>PostgreSQL\")\n  alb@svc(elb, \"ALB<br/>strangler fig\")\n  svc@svc(fargate, \"New services\")\nend\napp --> dx\nora --> dx\ndx -->|block replication| mgn --> ec2\ndx -->|CDC| dms -->|converted schema| aur\nec2 --> aur\nalb --> ec2\nalb -->|carved-out routes| svc --> aur\n",
+      "diagramCaption": "Meet the deadline with rehost plus DMS CDC first, then cut Oracle licensing by moving to Aurora PostgreSQL and strangle the monolith route by route."
     },
     {
       "id": "hybrid-networking-100-vpcs",
@@ -562,7 +580,9 @@
         "Addresses IP planning (IPAM) and overlapping CIDRs",
         "Centralized inspection and egress with cost awareness",
         "Covers hybrid DNS and service-level connectivity options"
-      ]
+      ],
+      "diagram": "flowchart TD\ndc[Data centers]:::ext\ndx@svc(direct-connect, \"Direct Connect<br/>2 locations\")\nvpn@svc(site-to-site-vpn, \"VPN backup\")\nsubgraph net[\"Network account\"]\n  tgw@svc(transit-gateway, \"TGW<br/>segment route tables\")\n  nfw@svc(network-firewall, \"Inspection VPC\")\n  egress[Egress VPC<br/>NAT gateways]:::net\nend\nprod@svc(vpc, \"Prod VPCs\")\ndev@svc(vpc, \"Non-prod VPCs\")\nlat@svc(vpc-lattice, \"Service network\")\ncwan@svc(cloud-wan, \"Other Regions\")\ndc --> dx --> tgw\ndc -.-> vpn -.-> tgw\ntgw <--> prod\ntgw <--> dev\ntgw -->|east-west + egress| nfw --> egress\nprod -.->|app-to-app| lat\negress ~~~ cwan\ntgw <-->|peering / Cloud WAN| cwan\n",
+      "diagramCaption": "Replace mesh peering with a Transit Gateway hub: route tables segment prod/non-prod, all traffic hairpins through an inspection VPC, and on-prem connects once via resilient Direct Connect."
     },
     {
       "id": "multi-account-landing-zone",
@@ -617,7 +637,9 @@
         "Combines preventive, detective and proactive guardrails",
         "Centralizes immutable logging and security tooling with delegated admins",
         "Includes account vending and cost governance"
-      ]
+      ],
+      "diagram": "flowchart TD\nidp[Corporate IdP]:::ext\nmgmt@svc(organizations, \"Management<br/>account + SCPs\")\nsso@svc(iam-identity-center)\nsubgraph wl[\"Workloads OU\"]\n  prod[Team prod<br/>accounts]:::compute\n  nonprod[Team non-prod<br/>accounts]:::compute\nend\nsubgraph secou[\"Security OU\"]\n  ct@svc(cloudtrail, \"Org trail\")\n  audit@svc(security-hub, \"Audit account\")\n  log@svc(s3, \"Log archive<br/>Object Lock\")\nend\nidp --> sso\nsso -->|permission sets| prod\nsso --> nonprod\nmgmt -.->|SCP guardrails| wl\nprod --> ct --> log\nprod -.->|findings| audit\n",
+      "diagramCaption": "Separate accounts by purpose under OUs, federate humans through Identity Center, enforce guardrails with SCPs, and send all logs to an immutable log-archive account."
     },
     {
       "id": "dr-regulated-bank",
@@ -674,7 +696,9 @@
         "Covers backups for corruption/ransomware separate from replication",
         "Includes testing, evidence and failback",
         "Addresses secrets, keys and IaC parity across Regions"
-      ]
+      ],
+      "diagram": "flowchart TD\nu[Customers]:::user\nr53@svc(route53)\narc@svc(application-recovery-controller, \"ARC Region<br/>switch plan\")\nsubgraph pri[\"Primary Region · 100%\"]\n  alb1@svc(elb, \"ALB\")\n  ecs1@svc(ecs, \"Full capacity\")\n  db1@svc(aurora, \"Aurora primary\")\nend\nsubgraph dr[\"DR Region · warm standby\"]\n  alb2@svc(elb, \"ALB\")\n  ecs2@svc(ecs, \"Scaled down\")\n  db2@svc(aurora, \"Aurora secondary\")\nend\nvault@svc(aws-backup, \"Air-gapped vault\")\nfis@svc(fault-injection-service, \"Game days\")\nu --> r53\narc -.->|flip| r53\nr53 -->|active| alb1 --> ecs1 --> db1\nr53 -.->|on failover| alb2 --> ecs2 --> db2\ndb1 -->|Global Database<br/>lag under 1 s| db2\ndb1 -.-> vault\nfis -.->|test| pri\n",
+      "diagramCaption": "Warm standby meets RTO 2 h / RPO 5 min: Aurora Global Database keeps data seconds behind, ARC flips traffic via the data plane, and regular game days generate evidence for the regulator."
     },
     {
       "id": "global-media-streaming-cdn",
@@ -723,7 +747,9 @@
         "Uses CDN caching and Origin Shield to protect origins",
         "Covers DRM, signed URLs, geo-restriction and DDoS protection",
         "Plans for redundancy and pre-event load testing"
-      ]
+      ],
+      "diagram": "flowchart TD\ncam[Venue feeds]:::ext\nsubgraph live[\"Live pipeline · 2 AZs\"]\n  ml[MediaLive<br/>encode]:::compute\n  mp[MediaPackage<br/>HLS/DASH + DRM]:::compute\nend\nsubgraph vod[\"VOD pipeline\"]\n  up@svc(s3, \"Uploads\")\n  sf@svc(step-functions, \"MediaConvert<br/>workflow\")\n  lib@svc(s3, \"ABR library\")\nend\nshield[Origin Shield]:::edge\ncf@svc(cloudfront, \"CloudFront<br/>signed URLs\")\nwaf@svc(shield, \"Shield Adv + WAF\")\nv[5M viewers]:::user\ncam --> ml --> mp\nmp ~~~ up\nup --> sf --> lib\nmp -->|live segments| shield\nlib -->|VOD segments| shield\nshield --> cf --> v\nwaf -.->|protects| cf\n",
+      "diagramCaption": "The CDN does the heavy lifting: Origin Shield collapses millions of viewer requests into a few origin fetches, so the live and VOD origins only serve each segment once per edge region."
     },
     {
       "id": "ecommerce-flash-sale",
@@ -771,7 +797,9 @@
         "Guarantees no overselling with atomic operations",
         "Covers bot mitigation and fairness",
         "Plans load tests, quotas and observability"
-      ]
+      ],
+      "diagram": "flowchart TD\nu[2M shoppers]:::user\ncf@svc(cloudfront, \"Cached<br/>product page\")\nwaf@svc(waf, \"Bot Control +<br/>rate limits\")\nroom[Virtual<br/>waiting room]:::note\napigw@svc(api-gateway, \"Reserve API\")\nfn@svc(lambda, \"Reserve\")\ninv@svc(dynamodb, \"Inventory<br/>conditional decrement\")\nq@svc(sqs, \"Orders queue\")\nworker@svc(lambda, \"Order worker\")\npay[Payment<br/>provider]:::ext\nsf@svc(step-functions, \"Expire /<br/>compensate\")\nu --> waf --> cf\ncf -->|buy| room -->|admitted rate| apigw --> fn\nfn -->|if stock left| inv\nfn -->|reserved| q --> worker --> pay\nworker -.->|timeout| sf -.->|release stock| inv\n",
+      "diagramCaption": "Cache absorbs the browsing, the waiting room meters buyers, a DynamoDB conditional write makes overselling impossible, and SQS lets payments proceed at the provider's pace."
     },
     {
       "id": "saas-multi-tenant-isolation",
@@ -821,7 +849,9 @@
         "Enforces isolation beyond application code (IAM, tenant-scoped credentials)",
         "Addresses noisy neighbors via throttling and quotas",
         "Covers onboarding automation and per-tenant observability and cost"
-      ]
+      ],
+      "diagram": "flowchart TD\nt[Tenant users]:::user\ncog@svc(cognito, \"JWT with<br/>tenant_id + tier\")\napigw@svc(api-gateway, \"Usage plans<br/>per tier\")\nsubgraph pool[\"Pool tier · shared\"]\n  svc@svc(eks, \"Shared services\")\n  iam@svc(iam, \"Tenant-scoped<br/>session policy\")\n  ddb@svc(dynamodb, \"Shared table<br/>PK = tenant\")\nend\ncp@svc(step-functions, \"Onboarding<br/>control plane\")\nsubgraph silo[\"Silo tier · per enterprise tenant\"]\n  acct[Dedicated<br/>account]:::sec\n  aur@svc(aurora, \"Dedicated DB\")\n  kms@svc(kms, \"Customer key\")\nend\nt --> cog --> apigw\napigw -->|basic / pro| svc\nsvc -->|assume with tenant tag| iam --> ddb\nddb ~~~ cp\ncp -.->|provisions| acct\napigw -->|enterprise| acct\nacct --> aur\naur -.->|encrypted by| kms\n",
+      "diagramCaption": "Mix models by tier: pooled tenants are isolated by tenant-scoped IAM credentials (not just WHERE clauses), while enterprise tenants get a silo account with their own DB and keys."
     },
     {
       "id": "cost-reduction-overspending",
@@ -870,7 +900,9 @@
         "Sequences quick wins, rightsizing, then commitments",
         "Considers data transfer and architectural changes, not just instance prices",
         "Establishes ongoing FinOps governance and unit metrics"
-      ]
+      ],
+      "diagram": "flowchart TD\ns1[1 · Visibility<br/>tags, accounts]:::note\nce@svc(cost-explorer, \"Cost Explorer<br/>+ Budgets\")\ns2[2 · Quick wins<br/>idle, schedules]:::note\nta@svc(trusted-advisor)\ns3[3 · Rightsize<br/>+ Graviton]:::note\nco@svc(compute-optimizer)\ns4[4 · Commit after<br/>rightsizing]:::note\nsp@svc(savings-plans)\ns5[5 · Re-architect<br/>data transfer]:::note\nvpce@svc(vpc, \"Gateway endpoints<br/>vs NAT\")\ns1 -.- ce --> s2 -.- ta --> s3 -.- co --> s4 -.- sp --> s5 -.- vpce\n",
+      "diagramCaption": "Order matters: see and attribute spend first, remove waste, rightsize, and only then buy Savings Plans on the smaller baseline."
     },
     {
       "id": "zero-trust-access",
@@ -918,7 +950,9 @@
         "Covers users, admins and service-to-service separately",
         "Centralizes logging and continuous verification",
         "Plans an incremental migration from VPN"
-      ]
+      ],
+      "diagram": "flowchart TD\nemp[Employees /<br/>contractors]:::user\nidp@svc(iam-identity-center, \"Identity\")\ndev[Device posture<br/>provider]:::ext\nva@svc(verified-access, \"Verified Access<br/>Cedar policy\")\nadmin[Admins]:::user\nsl@svc(security-lake, \"Access logs\")\nssm@svc(systems-manager, \"Session Manager\")\nsubgraph vpc[\"Private VPC · no VPN\"]\n  alb@svc(elb, \"Internal ALB\")\n  app@svc(ecs, \"Internal apps\")\n  lat@svc(vpc-lattice, \"Service-to-service<br/>IAM auth\")\nend\nemp -->|every request| va\nidp -.->|claims| va\ndev -.->|trust signal| va\nva --> alb --> app\nva -.-> sl\nva ~~~ admin\nadmin -->|no SSH / bastion| ssm --> app\napp --> lat\n",
+      "diagramCaption": "Access is decided per request from identity plus device posture, not network location; admins use Session Manager and services authenticate to each other with IAM."
     },
     {
       "id": "log-aggregation-security-analytics",
@@ -969,7 +1003,9 @@
         "Normalizes data and tiers storage for search vs retention",
         "Uses managed detection and automated response",
         "Addresses immutability, access control and cost"
-      ]
+      ],
+      "diagram": "flowchart TD\nsubgraph accts[\"200 member accounts\"]\n  ct@svc(cloudtrail)\n  vpcf@svc(vpc, \"Flow logs\")\n  gd@svc(guardduty)\nend\nsubgraph secacct[\"Security account\"]\n  sl@svc(security-lake, \"Security Lake<br/>OCSF + on-prem\")\n  sh@svc(security-hub)\n  s3@svc(s3, \"7-year retention\")\n  eb@svc(eventbridge)\n  os@svc(opensearch, \"30-day search\")\n  ath@svc(athena, \"Hunts\")\n  sf@svc(step-functions, \"Auto-response\")\nend\nct --> sl\nvpcf --> sl\ngd -->|findings| sh\nsl --> s3\nsh --> eb --> sf\ns3 --> os\ns3 --> ath\n",
+      "diagramCaption": "Collect every account's logs into one locked-down security account in a normalized format (OCSF), keep a hot tier for recent search and cheap S3 tiers for long retention."
     },
     {
       "id": "batch-hpc-processing",
@@ -1016,7 +1052,9 @@
         "Uses managed scheduling and Spot diversification with fallback",
         "Selects storage for throughput and cost",
         "Covers security of sensitive data and cost per job metrics"
-      ]
+      ],
+      "diagram": "flowchart TD\nsched@svc(step-functions, \"Nightly workflow<br/>+ deadline alarm\")\nin@svc(s3, \"Input FASTQ\")\nbatch@svc(batch, \"Batch job queue\")\nfsx@svc(fsx, \"FSx for Lustre<br/>linked to S3\")\necr@svc(ecr, \"Tool images\")\nsubgraph ce[\"Compute environment\"]\n  spot@svc(ec2, \"Spot<br/>many types\")\n  od@svc(ec2, \"On-Demand<br/>fallback\")\nend\nout@svc(s3, \"Results\")\nsched -->|10k jobs| batch\nin --> fsx\nbatch --> spot\nbatch -.->|capacity short| od\nfsx --> spot\necr -.-> spot\nspot --> out\n",
+      "diagramCaption": "AWS Batch spreads independent jobs over diversified Spot capacity with an On-Demand fallback, and FSx for Lustre feeds them S3 data at high throughput."
     },
     {
       "id": "mobile-backend",
@@ -1064,7 +1102,9 @@
         "Designs the data model around access patterns",
         "Covers offline/real-time needs, media handling and push",
         "Keeps costs aligned with a startup and scales automatically"
-      ]
+      ],
+      "diagram": "flowchart TD\napp[iOS / Android<br/>app]:::user\ncog@svc(cognito, \"Social sign-in\")\nas@svc(appsync, \"GraphQL +<br/>subscriptions\")\ns3@svc(s3, \"Photos<br/>pre-signed PUT\")\nddb@svc(dynamodb, \"Single table\")\ncf@svc(cloudfront, \"Serves media\")\nstr@svc(lambda, \"Feed fan-out\")\nsns@svc(sns, \"Push<br/>APNs / FCM\")\napp --> cog\napp -->|queries +<br/>offline sync| as --> ddb\napp -->|upload| s3 --> cf\nddb -->|streams| str\nstr -->|follower feeds| ddb\nstr --> sns\n",
+      "diagramCaption": "A serverless mobile backend: Cognito for identity, AppSync for GraphQL with real-time and offline sync, DynamoDB Streams to fan out feeds, and S3 pre-signed URLs for media."
     },
     {
       "id": "ml-training-inference-platform",
@@ -1110,7 +1150,9 @@
         "Implements governance: approvals, lineage, explainability",
         "Meets latency with suitable inference options",
         "Addresses security isolation and cost (Spot, auto scaling)"
-      ]
+      ],
+      "diagram": "flowchart TD\nds[Data scientists]:::user\nsus@svc(sagemaker-unified-studio, \"Unified Studio\")\nsubgraph dev[\"ML dev account\"]\n  lake@svc(s3, \"Lake data\")\n  train@svc(sagemaker-ai, \"Training<br/>managed Spot\")\n  reg@svc(sagemaker-ai, \"Model Registry<br/>approval\")\nend\ncp@svc(codepipeline, \"Promote\")\nsubgraph prod[\"Prod account\"]\n  ep@svc(sagemaker-ai, \"Real-time<br/>endpoint\")\n  fs@svc(sagemaker-ai, \"Online<br/>Feature Store\")\n  mon@svc(cloudwatch, \"Model Monitor<br/>drift\")\nend\napp[Payment app]:::ext\nds --> sus --> train\nlake --> train --> reg\nreg -->|approved| cp --> ep\napp -->|score under 50 ms| ep\nep --> fs\nep -.-> mon\n",
+      "diagramCaption": "Training, an approval-gated registry and prod endpoints live in separate accounts, joined by a pipeline, with drift monitoring closing the loop back to retraining."
     },
     {
       "id": "mainframe-batch-modernization",
@@ -1159,7 +1201,9 @@
         "Uses AI-assisted assessment/refactoring tools where appropriate",
         "Plans data migration and coexistence",
         "Emphasizes testing, equivalence and incremental risk reduction"
-      ]
+      ],
+      "diagram": "flowchart TD\nsubgraph mf[\"z/OS mainframe\"]\n  code[COBOL + CICS<br/>+ JCL batch]:::ext\n  db2[(DB2 / VSAM)]:::ext\nend\ntr@svc(aws-transform, \"Transform<br/>analyze + refactor\")\ndms@svc(dms, \"CDC during<br/>coexistence\")\nsubgraph aws[\"AWS target\"]\n  online@svc(ecs, \"Java online<br/>services\")\n  sf@svc(step-functions, \"Batch<br/>orchestration\")\n  batch@svc(batch, \"Parallel jobs\")\n  aur@svc(aurora, \"Aurora<br/>PostgreSQL\")\nend\ncode --> tr\ntr -->|Java| online\ntr -->|workflows| sf --> batch\ndb2 -->|Direct Connect| dms --> aur\nonline --> aur\nbatch --> aur\n",
+      "diagramCaption": "AWS Transform converts COBOL/JCL into Java services and workflows, batch jobs run in parallel instead of a fixed window, and CDC keeps data in sync while both platforms coexist."
     },
     {
       "id": "eks-containers-platform",
@@ -1208,7 +1252,9 @@
         "Reduces toil with managed node lifecycle and GitOps",
         "Covers image security, runtime security and observability",
         "Addresses per-team cost allocation and optimization"
-      ]
+      ],
+      "diagram": "flowchart TD\ndevs[12 teams]:::user\ngit[Git repos]:::ext\ncb@svc(codebuild, \"Build\")\necr@svc(ecr, \"ECR + Inspector<br/>scan\")\nalb@svc(elb, \"ALB ingress\")\nsubgraph cluster[\"EKS cluster · Auto Mode\"]\n  argo[Argo CD<br/>GitOps]:::compute\n  nsA[Team A namespace<br/>quota, RBAC,<br/>Pod Identity]:::compute\n  nsB[Team B namespace]:::compute\n  nodes@svc(ec2, \"Managed nodes<br/>Spot + Graviton\")\nend\ndevs -->|PR| git\ngit --> cb --> ecr\ngit -->|sync| argo\nargo --> nsA\nargo --> nsB\nalb --> nsA\nnsA --> nodes\nnsB --> nodes\necr -.->|pull| nodes\n",
+      "diagramCaption": "Teams ship by merging to Git; Argo CD syncs into quota-limited namespaces while EKS Auto Mode handles node provisioning, patching and scaling."
     },
     {
       "id": "api-monetization-partner-apis",
@@ -1257,7 +1303,9 @@
         "Chooses appropriate authentication per tier",
         "Designs accurate metering and billing",
         "Covers abuse protection, caching and versioning"
-      ]
+      ],
+      "diagram": "flowchart TD\np[Partner apps]:::user\ncog@svc(cognito, \"OAuth client<br/>credentials\")\nwaf@svc(waf, \"Rate rules\")\ncf@svc(cloudfront, \"Edge cache\")\napigw@svc(api-gateway, \"Usage plans<br/>free / pro / ent\")\nfn@svc(lambda, \"Forecast API\")\nddb@svc(dynamodb, \"Weather data\")\nfh@svc(data-firehose, \"Access logs\")\nath@svc(athena, \"Billing<br/>aggregation\")\npl@svc(privatelink, \"Enterprise<br/>private access\")\np -->|token| cog\np --> waf --> cf --> apigw\npl --> apigw\napigw -->|throttle + quota| fn --> ddb\napigw -.-> fh --> ath\n",
+      "diagramCaption": "API Gateway usage plans turn tiers into throttles and quotas, OAuth authenticates partners, and access logs flow to S3/Athena for metering and billing."
     },
     {
       "id": "ransomware-resilient-backup",
@@ -1306,7 +1354,9 @@
         "Uses immutable, cross-account, cross-Region backups",
         "Includes restore testing and clean-room recovery",
         "Covers detection and incident response integration"
-      ]
+      ],
+      "diagram": "flowchart TD\nsubgraph prod[\"Workload accounts\"]\n  ec2@svc(ec2)\n  rds@svc(rds)\n  efs@svc(efs)\nend\nbk@svc(aws-backup, \"Local vault<br/>Vault Lock + org policy\")\nsubgraph rec[\"Recovery account · other Region\"]\n  lag@svc(aws-backup, \"Logically<br/>air-gapped vault\")\nend\nmpa[Multi-party<br/>approval]:::sec\ngd@svc(guardduty, \"Malware scan\")\nsubgraph clean[\"Clean-room account\"]\n  restore@svc(ec2, \"Restore + test\")\nend\nec2 --> bk\nrds --> bk\nefs --> bk\nbk -->|cross-account<br/>cross-Region copy| lag\nlag --> mpa\nlag --> gd\nmpa -->|share via RAM| restore\ngd -.->|clean point| restore\n",
+      "diagramCaption": "Assume the admin is compromised: immutable copies in a separate account and Region, sharable only with multi-party approval, restored into a clean account."
     }
   ]
 }

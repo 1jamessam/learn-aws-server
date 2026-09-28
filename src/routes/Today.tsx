@@ -1,8 +1,9 @@
 import { useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import { NewsCard } from '../components/NewsCard'
+import { ServiceIcon } from '../components/ServiceIcon'
 import { Page, Section } from '../components/ui'
-import { flashcards, leadership, quiz, scenarios, snapshotDate } from '../lib/content'
+import { flashcards, leadership, quiz, scenarios, shortName, snapshotDate, studyPath } from '../lib/content'
 import { useNews } from '../lib/news'
 import { streak, useProgress } from '../lib/progress'
 import { isDue } from '../lib/srs'
@@ -16,6 +17,8 @@ export default function Today() {
   const accuracy = answered.length
     ? Math.round((100 * answered.reduce((a, q) => a + q.correct, 0)) / answered.reduce((a, q) => a + q.correct + q.wrong, 0))
     : null
+  const nextUp = studyPath.stages.flatMap((s) => s.services).find((id) => !progress.learned[id])
+  const stage = nextUp && studyPath.stages.find((s) => s.services.includes(nextUp))
   const pick = useMemo(() => {
     const s = scenarios.scenarios[Math.floor(Math.random() * scenarios.scenarios.length)]
     const lp = leadership.principles[Math.floor(Math.random() * leadership.principles.length)]
@@ -38,6 +41,19 @@ export default function Today() {
           Quick quiz ({quiz.questions.length - answered.length} unseen)
         </Link>
       </div>
+
+      {nextUp && stage && (
+        <Section title="Study path: up next">
+          <Link to={`/learn/services/${nextUp}`} className="card flex items-center gap-3 hover:border-accent">
+            <ServiceIcon id={nextUp} size={48} />
+            <div className="min-w-0 flex-1">
+              <div className="font-semibold">{shortName(nextUp)}</div>
+              <div className="truncate text-xs muted">{stage.title}</div>
+            </div>
+            <span className="text-accent">›</span>
+          </Link>
+        </Section>
+      )}
 
       <Section title="Whiteboard warm-up">
         <Link to={`/mock/scenario/${pick.s.id}`} className="card block hover:border-accent">

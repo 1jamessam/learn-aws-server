@@ -1,0 +1,83 @@
+{
+  "tiers": {
+    "must": [
+      "iam", "organizations", "kms", "cloudtrail",
+      "vpc", "route53", "elb", "cloudfront", "transit-gateway", "direct-connect",
+      "ec2", "ec2-auto-scaling", "lambda", "ecs", "eks", "fargate",
+      "s3", "ebs", "efs",
+      "rds", "aurora", "dynamodb", "elasticache",
+      "sqs", "sns", "eventbridge", "step-functions", "api-gateway", "kinesis-data-streams",
+      "cloudwatch", "cloudformation",
+      "bedrock"
+    ],
+    "should": [
+      "iam-identity-center", "control-tower", "secrets-manager", "cognito", "waf", "shield", "guardduty", "security-hub", "config", "acm",
+      "privatelink", "site-to-site-vpn", "global-accelerator", "vpc-lattice", "network-firewall",
+      "ecr", "batch", "outposts",
+      "s3-glacier", "fsx", "storage-gateway", "aws-backup",
+      "aurora-dsql", "redshift", "documentdb", "memorydb", "neptune",
+      "athena", "glue", "data-firehose", "msk", "opensearch", "lake-formation",
+      "bedrock-agentcore", "sagemaker-ai",
+      "cdk", "systems-manager", "x-ray", "trusted-advisor", "well-architected-tool",
+      "elastic-disaster-recovery", "application-recovery-controller",
+      "dms", "application-migration-service", "datasync", "aws-transform",
+      "savings-plans", "cost-explorer", "compute-optimizer", "budgets"
+    ]
+  },
+  "stages": [
+    {
+      "title": "1. Foundations: global infrastructure & identity",
+      "why": "Every design answer starts with accounts, identity and encryption. Interviewers probe least privilege and multi-account setups early.",
+      "services": ["iam", "organizations", "kms", "cloudtrail"],
+      "concepts": ["Regions, AZs, edge locations", "Shared responsibility model", "IAM policy evaluation (explicit deny wins)", "Multi-account strategy with SCPs", "Encryption at rest and in transit"]
+    },
+    {
+      "title": "2. Networking",
+      "why": "Networking questions separate SAs from developers. Be able to draw a VPC across 2 AZs and explain hybrid connectivity.",
+      "services": ["vpc", "route53", "elb", "cloudfront", "transit-gateway", "direct-connect"],
+      "concepts": ["Public vs private subnets, IGW, NAT", "Security groups vs NACLs", "VPC endpoints (gateway vs interface)", "ALB vs NLB", "Hub-and-spoke with Transit Gateway", "Route 53 routing policies"]
+    },
+    {
+      "title": "3. Compute",
+      "why": "Choosing between EC2, containers and serverless, and justifying the choice, comes up in almost every scenario.",
+      "services": ["ec2", "ec2-auto-scaling", "lambda", "ecs", "eks", "fargate"],
+      "concepts": ["Instance families and purchase options (On-Demand, Spot, Savings Plans)", "Auto Scaling policies", "Lambda limits and cold starts", "ECS vs EKS; Fargate vs EC2 launch type"]
+    },
+    {
+      "title": "4. Storage",
+      "why": "Know which storage fits which access pattern, plus durability and cost trade-offs.",
+      "services": ["s3", "ebs", "efs"],
+      "concepts": ["Object vs block vs file", "S3 storage classes and lifecycle", "S3 consistency, versioning, replication", "EBS volume types (gp3 vs io2)"]
+    },
+    {
+      "title": "5. Databases",
+      "why": "\"SQL or NoSQL, and why?\" is a classic. Know HA, read scaling and caching for each engine.",
+      "services": ["rds", "aurora", "dynamodb", "elasticache"],
+      "concepts": ["Multi-AZ vs read replicas", "Aurora storage architecture and Global Database", "DynamoDB keys, GSIs, capacity modes, global tables", "Caching patterns (cache-aside, write-through)"]
+    },
+    {
+      "title": "6. Integration & decoupling",
+      "why": "Loose coupling is the backbone of resilient, scalable designs. Expect \"SQS vs SNS vs EventBridge vs Kinesis\".",
+      "services": ["sqs", "sns", "eventbridge", "step-functions", "api-gateway", "kinesis-data-streams"],
+      "concepts": ["Queue vs pub/sub vs event bus vs stream", "Fan-out pattern", "Dead-letter queues and idempotency", "Orchestration vs choreography"]
+    },
+    {
+      "title": "7. Operations, IaC & resilience",
+      "why": "SAs are judged on operability. Pair these with the Well-Architected pillars and DR strategies in Learn.",
+      "services": ["cloudwatch", "cloudformation"],
+      "concepts": ["Metrics, logs, alarms, dashboards", "Infrastructure as code", "DR strategies by RTO/RPO", "Well-Architected pillars"]
+    },
+    {
+      "title": "8. Generative AI",
+      "why": "AWS SA interviews now routinely include GenAI. Know RAG, guardrails and agents on Bedrock.",
+      "services": ["bedrock", "bedrock-agentcore"],
+      "concepts": ["RAG with Knowledge Bases", "Guardrails", "Model choice, cost and latency trade-offs", "Agents and tool use"]
+    },
+    {
+      "title": "9. Level up: security, data, migration & cost",
+      "why": "Once the core feels solid, these make senior-level answers stand out.",
+      "services": ["iam-identity-center", "control-tower", "guardduty", "waf", "privatelink", "redshift", "athena", "glue", "dms", "application-migration-service", "aws-transform", "savings-plans"],
+      "concepts": ["Landing zones", "Threat detection", "Data lakes", "The 7 Rs of migration", "Cost optimization levers"]
+    }
+  ]
+}

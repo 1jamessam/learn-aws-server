@@ -1,0 +1,186 @@
+{
+  "ec2": {
+    "diagram": "flowchart TD\n  u[Users]:::user --> alb@svc(elb, \"ALB\")\n  subgraph AZA[AZ a]\n    e1@svc(ec2, \"EC2\")\n    v1@svc(ebs, \"EBS volume\")\n  end\n  alb --> e1\n  alb --> azb[AZ b<br/>mirror]:::note\n  e1 --- v1\n  asg@svc(ec2-auto-scaling, \"Auto Scaling<br/>group\") -. launches/replaces .-> e1\n  asg -.-> azb\n  p{\"On-Demand · Savings Plans<br/>· Spot · Reserved\"}:::note -.- asg\n",
+    "diagramCaption": "EC2 instances are AZ-scoped with AZ-scoped EBS: spread them across AZs behind an ELB in an Auto Scaling group and mix purchase options for cost."
+  },
+  "lambda": {
+    "diagram": "flowchart TD\n  u[Clients]:::user -->|HTTPS| api@svc(api-gateway)\n  api -->|sync| fn@svc(lambda, \"Lambda\")\n  s3@svc(s3) -->|object event| q@svc(sqs, \"SQS buffer\")\n  q -->|batch poll| w@svc(lambda, \"Worker<br/>Lambda\")\n  w --> db@svc(dynamodb)\n  fn --> db\n  w -. failures .-> dlq@svc(sqs, \"DLQ\")\n  n[\"Max 15 min · 10 GB memory<br/>6 MB sync / 1 MB async\"]:::note -.- fn\n",
+    "diagramCaption": "Lambda scales per request; put SQS in front to absorb bursts, protect downstream databases and catch failures in a DLQ."
+  },
+  "ec2-auto-scaling": {
+    "diagram": "flowchart TD\n  cw@svc(cloudwatch, \"Alarm\") -->|scale| asg@svc(ec2-auto-scaling, \"ASG · min 2<br/>max 10\")\n  asg --> AZA\n  asg --> azb[AZ b<br/>mirror]:::note\n  subgraph AZA[AZ a]\n    direction TB\n    a1@svc(ec2)\n    a2@svc(ec2)\n  end\n  AZA --- alb@svc(elb, \"ALB health<br/>checks\")\n",
+    "diagramCaption": "An Auto Scaling group keeps capacity between min and max across AZs, replaces instances that fail ELB health checks, and scales on metrics."
+  },
+  "elastic-beanstalk": {
+    "diagram": "flowchart TD\n  dev[Developer<br/>code bundle]:::user -->|eb deploy| eb@svc(elastic-beanstalk)\n  eb -->|creates via| cfn@svc(cloudformation)\n  subgraph ENV[Environment]\n    alb@svc(elb, \"ALB\")\n    asg@svc(ec2-auto-scaling, \"Auto Scaling\")\n    ec2@svc(ec2, \"EC2 platform\")\n  end\n  cfn --> ENV\n  alb --> ec2\n  asg --- ec2\n  ec2 --> rds@svc(rds, \"RDS<br/>(decoupled)\")\n  n{\"Rolling · Immutable ·<br/>Blue/green CNAME swap\"}:::note -.- eb\n",
+    "diagramCaption": "Beanstalk turns a code bundle into a CloudFormation-managed ALB + Auto Scaling + EC2 stack; keep the database outside the environment lifecycle."
+  },
+  "lightsail": {
+    "diagram": "flowchart TD\n  u[Visitors]:::user --> cdn@svc(lightsail, \"Lightsail CDN\")\n  cdn --> lb@svc(lightsail, \"Lightsail LB\")\n  lb --> i1@svc(lightsail, \"Instance<br/>fixed bundle\")\n  lb --> i2@svc(lightsail, \"Instance<br/>fixed bundle\")\n  i1 --> db@svc(lightsail, \"Managed DB\")\n  i2 --> db\n  i1 -. snapshot export .-> ec2@svc(ec2, \"EC2 when<br/>you outgrow it\")\n",
+    "diagramCaption": "Lightsail bundles VM, storage, DNS and transfer at a fixed monthly price; export a snapshot to EC2 when you need full VPC flexibility."
+  },
+  "batch": {
+    "diagram": "flowchart TD\n  sub[Scheduler / app]:::user -->|SubmitJob| jq@svc(batch, \"Job queue<br/>priority\")\n  sfn@svc(step-functions) -->|submit + wait| jq\n  jq --> ce1@svc(batch, \"Compute env<br/>Spot\")\n  jq --> ce2@svc(batch, \"Compute env<br/>On-Demand\")\n  ce1 --> ec2@svc(ec2, \"EC2 Spot\")\n  ce2 --> fg@svc(fargate)\n  ec2 -->|read/write| s3@svc(s3)\n  fg --> s3\n  img@svc(ecr, \"Job image\") -.-> ec2\n",
+    "diagramCaption": "Batch queues containerized jobs and provisions Spot/On-Demand EC2 or Fargate capacity per compute environment, scaling to zero between runs."
+  },
+  "outposts": {
+    "diagram": "flowchart TD\n  subgraph REG[AWS Region]\n    cp[Control plane]:::net\n    s3@svc(s3, \"S3 / DR copy\")\n  end\n  subgraph DC[Your data center]\n    subgraph OP[Outpost rack]\n      ec2@svc(outposts, \"EC2 / EBS /<br/>ECS / RDS\")\n    end\n    lgw[Local gateway]:::net\n    onp[On-prem systems]:::ext\n  end\n  cp <-->|service link| OP\n  ec2 <-->|low latency| lgw\n  lgw <--> onp\n  ec2 -. backups .-> s3\n",
+    "diagramCaption": "Outposts runs AWS services in your data center, but it is managed through a service link to its parent Region, so plan connectivity and a Region DR path."
+  },
+  "local-zones": {
+    "diagram": "flowchart TD\n  u[Metro users]:::user -->|single-digit ms| lz\n  subgraph REG[Parent Region us-west-2]\n    subgraph VPC[VPC]\n      rsub[Region subnets<br/>AZ a / AZ b]:::net\n      subgraph LZ[Local Zone Los Angeles]\n        lz@svc(local-zones, \"Local Zone<br/>subnet\")\n        ec2@svc(ec2, \"EC2 / EBS\")\n      end\n    end\n    db@svc(aurora, \"Aurora<br/>in Region\")\n  end\n  lz --- ec2\n  ec2 -->|VPC routing| rsub\n  rsub --> db\n",
+    "diagramCaption": "A Local Zone is an extension of a parent Region: you add a Local Zone subnet to your VPC and run latency-sensitive tiers close to metro users."
+  },
+  "wavelength": {
+    "diagram": "flowchart TD\n  m[5G devices]:::user -->|carrier network| cg[Carrier gateway]:::net\n  subgraph REG[Parent Region]\n    subgraph VPC[VPC]\n      subgraph WZ[Wavelength Zone in carrier DC]\n        wl@svc(wavelength, \"Wavelength<br/>subnet\")\n        ec2@svc(ec2, \"Edge EC2\")\n      end\n      back@svc(ecs, \"Backend in<br/>Region\")\n    end\n  end\n  cg --> ec2\n  wl --- ec2\n  ec2 -->|VPC| back\n",
+    "diagramCaption": "Wavelength puts compute inside the 5G carrier network so mobile traffic reaches your app without leaving the carrier; the rest of the app stays in the Region."
+  },
+  "app-runner": {
+    "diagram": "flowchart TD\n  old@svc(app-runner, \"App Runner<br/>closed to new customers\") -. migrate .-> r53\n  u[Users]:::user --> r53@svc(route53, \"Route 53<br/>weighted records\")\n  r53 -->|90% → 0%| old\n  r53 -->|10% → 100%| alb\n  subgraph EXP[ECS Express Mode stack]\n    alb@svc(elb, \"ALB\")\n    ecs@svc(ecs, \"ECS service\")\n    fg@svc(fargate, \"Fargate tasks\")\n  end\n  alb --> ecs --> fg\n  img@svc(ecr, \"Same image\") -.-> fg\n",
+    "diagramCaption": "App Runner is closed to new customers: redeploy the same image with ECS Express Mode and shift traffic with Route 53 weighted records."
+  },
+  "ecs": {
+    "diagram": "flowchart TD\n  alb@svc(elb, \"ALB\") --> svc@svc(ecs, \"Service<br/>desired 4\")\n  svc --> fg@svc(fargate, \"Fargate\")\n  svc --> mi@svc(ec2, \"EC2\")\n  ecr@svc(ecr) -.->|image| fg\n  fg --- n[\"Exec role: pull<br/>Task role: app\"]:::note\n",
+    "diagramCaption": "An ECS service keeps N tasks running behind a load balancer on Fargate or EC2 capacity; the execution role pulls images/secrets and the task role is the app identity."
+  },
+  "eks": {
+    "diagram": "flowchart TD\n  dev[kubectl / GitOps]:::user --> cp\n  subgraph AWS[AWS-managed]\n    cp@svc(eks, \"EKS control plane<br/>3 AZs\")\n    cap[Argo CD · ACK · kro<br/>EKS Capabilities]:::compute\n  end\n  subgraph VPC[Your VPC]\n    subgraph NG[Data plane]\n      auto@svc(ec2, \"Auto Mode /<br/>Karpenter nodes\")\n      fp@svc(fargate, \"Fargate pods\")\n    end\n    lb@svc(elb, \"ALB/NLB\")\n  end\n  cp --> NG\n  cap -.-> cp\n  lb --> auto\n  auto -->|Pod Identity| iam@svc(iam, \"IAM role\")\n",
+    "diagramCaption": "AWS runs the multi-AZ Kubernetes control plane; you choose the data plane (Auto Mode, managed nodes or Fargate) and give pods AWS access with Pod Identity."
+  },
+  "fargate": {
+    "diagram": "flowchart TD\n  ecs@svc(ecs, \"ECS service\") --> t1\n  eks@svc(eks, \"EKS pods\") --> t2\n  subgraph VPC[VPC private subnets]\n    t1@svc(fargate, \"Task<br/>own ENI\")\n    t2@svc(fargate, \"Pod<br/>own ENI\")\n  end\n  t1 --> db@svc(rds)\n  t2 --> db\n  n[\"No nodes to patch · per-second vCPU+GB<br/>No GPUs / DaemonSets\"]:::note -.- t1\n",
+    "diagramCaption": "Fargate runs each ECS task or EKS pod in its own isolated micro-VM with its own ENI; you size vCPU/memory and never manage instances."
+  },
+  "ecr": {
+    "diagram": "flowchart LR\n  cb@svc(codebuild, \"Build\") -->|docker push| ecr@svc(ecr, \"ECR repo\")\n  ecr -->|scan| insp@svc(inspector)\n  ecr -->|replicate| ecr2@svc(ecr, \"ECR<br/>other Region\")\n  ecr -->|pull| ecs@svc(ecs)\n",
+    "diagramCaption": "ECR is the private image registry in the build→scan→replicate→deploy chain; Inspector scans images and replication feeds multi-Region deploys."
+  },
+  "s3": {
+    "diagram": "flowchart TD\n  u[Users]:::user -->|HTTPS| cf@svc(cloudfront)\n  cf -->|OAC signed| b\n  subgraph R[S3 bucket · 11 nines · multi-AZ]\n    b@svc(s3, \"Standard\")\n    ia@svc(s3, \"Standard-IA<br/>30 days\")\n    gl@svc(s3-glacier, \"Glacier<br/>Flexible 90 d\")\n    da@svc(s3-glacier, \"Deep Archive<br/>180 d\")\n  end\n  b -->|lifecycle| ia\n  ia -->|lifecycle| gl\n  gl -->|lifecycle| da\n  b -->|event| fn@svc(lambda)\n  bpa[Block Public Access<br/>+ SSE-KMS]:::sec -.- b\n",
+    "diagramCaption": "Serve S3 privately through CloudFront with OAC, and let lifecycle rules move ageing objects down the storage classes (watch minimum durations)."
+  },
+  "s3-glacier": {
+    "diagram": "flowchart TD\n  old@svc(s3-glacier, \"Legacy Glacier vaults<br/>closed Dec 2025\") -. copy out .-> std\n  subgraph S3[S3 bucket]\n    std@svc(s3, \"S3 Standard\")\n    ir@svc(s3-glacier, \"Glacier Instant<br/>ms access\")\n    fr@svc(s3-glacier, \"Glacier Flexible<br/>min–12 h\")\n    da@svc(s3-glacier, \"Deep Archive<br/>12–48 h\")\n  end\n  std -->|lifecycle| ir\n  ir -->|lifecycle| fr\n  fr -->|lifecycle| da\n  da -->|restore| tmp[Temporary copy]:::storage\n",
+    "diagramCaption": "Use the S3 Glacier storage classes via lifecycle rules, not the legacy vault API (closed to new customers); retrieval speed and cost fall as you go colder."
+  },
+  "ebs": {
+    "diagram": "flowchart TD\n  subgraph AZA[AZ a]\n    ec2@svc(ec2)\n    v@svc(ebs, \"gp3 / io2 volume\")\n  end\n  ec2 --- v\n  v -->|snapshot| snap@svc(s3, \"Snapshots<br/>Regional, incremental\")\n  snap -->|restore| v2@svc(ebs, \"New volume<br/>in AZ b\")\n  snap -->|copy| dr[Other Region /<br/>account]:::ext\n",
+    "diagramCaption": "An EBS volume lives in one AZ; snapshots stored regionally are how you move, restore or DR a volume into another AZ, Region or account."
+  },
+  "efs": {
+    "diagram": "flowchart TD\n  ec2@svc(ec2) --> mta\n  fg@svc(fargate) --> mta\n  fn@svc(lambda) --> mta\n  subgraph AZA[AZ a]\n    mta[Mount target]:::net\n  end\n  mtb[AZ b mount target<br/>mirror]:::note\n  mta --> efs@svc(efs, \"EFS · Regional<br/>NFSv4.1\")\n  mtb --> efs\n  efs -->|lifecycle| ia[IA / Archive class]:::storage\n",
+    "diagramCaption": "EFS is one elastic NFS file system shared by EC2, containers and Lambda across AZs through a mount target in each AZ."
+  },
+  "fsx": {
+    "diagram": "flowchart TD\n  q{Need SMB / Windows?}:::note\n  q -->|yes| win@svc(fsx, \"FSx for<br/>Windows\")\n  q -->|no| q2{HPC / ML<br/>on S3 data?}:::note\n  win --- ad[Managed AD]:::sec\n  q2 -->|yes| lus@svc(fsx, \"FSx for<br/>Lustre\")\n  q2 -->|no| q3{NetApp features?}:::note\n  lus <-->|lazy load| s3@svc(s3)\n  q3 -->|yes| ont@svc(fsx, \"FSx for<br/>NetApp ONTAP\")\n  q3 -->|ZFS / NFS| zfs@svc(fsx, \"FSx for<br/>OpenZFS\")\n",
+    "diagramCaption": "Pick the FSx flavor from the requirement: SMB+AD → Windows, HPC on S3 data → Lustre, NetApp features → ONTAP, ZFS/NFS → OpenZFS."
+  },
+  "storage-gateway": {
+    "diagram": "flowchart TD\n  subgraph DC[On-premises]\n    app[Apps / servers]:::ext\n    bk[Backup software]:::ext\n    sg@svc(storage-gateway, \"Gateway VM<br/>local cache\")\n  end\n  app -->|NFS/SMB| sg\n  app -->|iSCSI| sg\n  bk -->|virtual tape| sg\n  sg -->|S3 File| s3@svc(s3)\n  sg -->|Volume snapshots| ebs@svc(ebs, \"EBS snapshots\")\n  sg -->|Tape archive| gl@svc(s3-glacier, \"Glacier /<br/>Deep Archive\")\n",
+    "diagramCaption": "Storage Gateway gives on-prem apps familiar protocols (NFS/SMB, iSCSI, VTL) with a local cache while the data lands in S3, EBS snapshots or Glacier."
+  },
+  "aws-backup": {
+    "diagram": "flowchart TD\n  org@svc(organizations, \"Backup policy<br/>(org-wide)\") --> plan\n  res[EC2 · RDS · DynamoDB<br/>EFS · S3 · EKS]:::compute --> plan\n  plan@svc(aws-backup, \"Backup plan<br/>schedule + retention\")\n  plan --> v1@svc(aws-backup, \"Vault<br/>Vault Lock\")\n  v1 -->|copy| v2@svc(aws-backup, \"Air-gapped vault<br/>backup account / Region\")\n  v1 -->|restore test| rt[Restore testing]:::note\n",
+    "diagramCaption": "AWS Backup applies one policy to many services and accounts, locks recovery points, and copies them to an isolated vault in another account/Region for ransomware resilience."
+  },
+  "s3-tables": {
+    "diagram": "flowchart TD\n  fh@svc(data-firehose, \"Streaming\") -->|Iceberg writes| tb\n  glue@svc(glue, \"Spark ETL\") --> tb\n  subgraph TB[Table bucket]\n    tb@svc(s3-tables, \"Iceberg tables\")\n    mnt[Auto compaction ·<br/>snapshot expiry]:::note\n  end\n  mnt -.- tb\n  tb --> cat@svc(lake-formation, \"Glue Catalog /<br/>Lake Formation\")\n  cat --> ath@svc(athena)\n  cat --> rs@svc(redshift)\n  cat --> emr@svc(emr)\n",
+    "diagramCaption": "S3 Tables stores Iceberg tables as first-class resources with automatic maintenance, queried by any engine through the Glue Data Catalog and Lake Formation."
+  },
+  "rds": {
+    "diagram": "flowchart TD\n  app@svc(ec2, \"App tier\") --> px@svc(rds, \"RDS Proxy\")\n  subgraph R[Region]\n    subgraph AZA[AZ a]\n      p@svc(rds, \"Primary\")\n    end\n    subgraph AZB[AZ b]\n      sb@svc(rds, \"Standby<br/>not readable\")\n    end\n    subgraph AZC[AZ c]\n      rr@svc(rds, \"Read replica\")\n    end\n  end\n  px --> p\n  p -->|sync replication| sb\n  p -->|async| rr\n  app -. reads .-> rr\n  p -->|cross-Region replica| dr[DR Region]:::ext\n",
+    "diagramCaption": "Multi-AZ gives HA with a synchronous standby; read replicas are asynchronous and scale reads; a cross-Region replica is for DR."
+  },
+  "aurora": {
+    "diagram": "flowchart TD\n  app[App]:::user -->|cluster endpoint| w\n  app -->|reader endpoint| r1\n  subgraph P[Primary Region]\n    w@svc(aurora, \"Writer\")\n    r1@svc(aurora, \"Reader\")\n    r2@svc(aurora, \"Reader\")\n    vol[(Cluster volume · 6 copies<br/>across 3 AZs · to 256 TiB)]:::storage\n  end\n  w --> vol\n  r1 --> vol\n  r2 --> vol\n  vol -->|Global Database<br/>~1 s lag| sec\n  subgraph S[Secondary Region]\n    sec@svc(aurora, \"Read-only cluster<br/>promote on failover\")\n  end\n",
+    "diagramCaption": "Aurora writer and up to 15 readers share one six-copy volume across 3 AZs; Global Database adds cross-Region replicas with ~1 s lag and fast promotion."
+  },
+  "aurora-dsql": {
+    "diagram": "flowchart TD\n  ua[Users US-East]:::user --> e1\n  ub[Users US-West]:::user --> e2\n  subgraph RA[Region A]\n    e1@svc(aurora-dsql, \"Endpoint<br/>read/write\")\n  end\n  subgraph RB[Region B]\n    e2@svc(aurora-dsql, \"Endpoint<br/>read/write\")\n  end\n  subgraph RW[Witness Region]\n    wt[Witness log]:::db\n  end\n  e1 <-->|synchronous commit| e2\n  e1 --- wt\n  e2 --- wt\n  n[\"Active-active · strong consistency<br/>OCC: retry on conflict\"]:::note -.- e1\n",
+    "diagramCaption": "Aurora DSQL gives two active read/write Regions plus a witness with strong consistency; design for optimistic-concurrency retries."
+  },
+  "dynamodb": {
+    "diagram": "flowchart TD\n  app@svc(lambda, \"API\") -->|PK = userId| t@svc(dynamodb, \"hash(PK)\")\n  t --> p1[(Partition 1)]:::db\n  t --> p2[(Partition N)]:::db\n  p1 --> st[Streams · 24 h]:::int\n  p2 --> st\n  st --> fn@svc(lambda, \"Consumer\")\n  fn --> os@svc(opensearch, \"Search\")\n  p2 --- n[\"≤3k RCU / 1k WCU<br/>per partition\"]:::note\n",
+    "diagramCaption": "The partition key hashes items onto partitions with fixed per-partition throughput, so choose a high-cardinality key; Streams feed Lambda for change-driven work."
+  },
+  "elasticache": {
+    "diagram": "flowchart TD\n  app@svc(ecs, \"App\") -->|1 GET key| c\n  subgraph C[ElastiCache Valkey · Multi-AZ]\n    c@svc(elasticache, \"Primary shard\")\n    rep@svc(elasticache, \"Replica\")\n  end\n  c --> rep\n  c -->|2 hit: return| app\n  app -->|3 miss: query| db@svc(aurora)\n  app -->|4 SET key + TTL| c\n  n[\"Cache-aside: TTLs bound staleness\"]:::note -.- c\n",
+    "diagramCaption": "Cache-aside: read from ElastiCache first, fall back to the database on a miss, then populate the cache with a TTL."
+  },
+  "memorydb": {
+    "diagram": "flowchart TD\n  app@svc(ecs, \"App\") -->|writes| p\n  subgraph C[MemoryDB cluster]\n    p@svc(memorydb, \"Primary<br/>in-memory\")\n    r@svc(memorydb, \"Replica\")\n  end\n  p -->|ack after persist| log[(Multi-AZ<br/>transaction log)]:::db\n  log --> r\n  app -->|µs reads| r\n  n[\"Durable: no data loss on failover<br/>vs ElastiCache async replication\"]:::note -.- log\n",
+    "diagramCaption": "MemoryDB commits every write to a Multi-AZ transaction log before acknowledging, so it can be a durable primary database with Redis/Valkey APIs."
+  },
+  "documentdb": {
+    "diagram": "flowchart TD\n  app[Mongo drivers]:::user -->|cluster endpoint| p\n  subgraph R[Primary Region]\n    p@svc(documentdb, \"Primary\")\n    rr@svc(documentdb, \"Replicas ≤15\")\n    vol[(Shared storage<br/>6 copies · 3 AZs)]:::storage\n  end\n  p --> vol\n  rr --> vol\n  app -. reader endpoint .-> rr\n  vol -->|Global Cluster| sec@svc(documentdb, \"Secondary Region\")\n  src[Self-managed<br/>MongoDB]:::ext -->|DMS| p\n",
+    "diagramCaption": "DocumentDB separates compute from Aurora-style shared storage; migrate from MongoDB with DMS and add Global Clusters for DR."
+  },
+  "neptune": {
+    "diagram": "flowchart TD\n  ev@svc(kinesis-data-streams, \"Transactions\") --> fn@svc(lambda, \"Loader\")\n  fn -->|add vertices/edges| g\n  subgraph NP[Neptune]\n    g@svc(neptune, \"Graph DB<br/>Gremlin · openCypher\")\n  end\n  api@svc(api-gateway, \"Fraud check API\") --> q@svc(lambda, \"Traversal\")\n  q -->|shared device / card<br/>2-3 hops| g\n  g -. export .-> na@svc(neptune, \"Neptune Analytics<br/>algorithms + vectors\")\n  na --> kb@svc(bedrock, \"GraphRAG\")\n",
+    "diagramCaption": "Neptune answers multi-hop relationship questions (fraud rings, identity graphs) that are expensive as SQL joins; Neptune Analytics adds graph algorithms and GraphRAG."
+  },
+  "keyspaces": {
+    "diagram": "flowchart TD\n  onp[Self-managed Cassandra]:::ext -. migrate .-> ks\n  app@svc(ecs, \"App with<br/>CQL driver\") -->|CQL / TLS| ks\n  subgraph R[Region A]\n    ks@svc(keyspaces, \"Keyspaces table<br/>3 copies across AZs\")\n  end\n  ks <-->|multi-Region replication| ks2@svc(keyspaces, \"Region B\")\n  n[\"Serverless · on-demand or<br/>provisioned · row ≤ 1 MB\"]:::note -.- ks\n",
+    "diagramCaption": "Keyspaces keeps the Cassandra CQL API but removes cluster operations; it is the lift target for self-managed Cassandra."
+  },
+  "timestream": {
+    "diagram": "flowchart TD\n  old@svc(timestream, \"LiveAnalytics<br/>closed Jun 2025\") -. migrate .-> infx\n  dev[Devices / agents]:::user --> iot@svc(iot-core)\n  iot -->|InfluxDB rule action| infx@svc(timestream, \"Timestream for<br/>InfluxDB\")\n  tg[Telegraf]:::ext --> infx\n  infx --> gf[Grafana dashboards]:::ext\n  infx -. long-term .-> s3@svc(s3, \"S3 + Athena\")\n",
+    "diagramCaption": "For new time-series workloads use Timestream for InfluxDB (LiveAnalytics is closed to new customers), fed by IoT Core or Telegraf, with S3 for long-term history."
+  },
+  "redshift": {
+    "diagram": "flowchart TD\n  aur@svc(aurora) -->|zero-ETL| rs\n  ddb@svc(dynamodb) -->|zero-ETL| rs\n  ks@svc(kinesis-data-streams) -->|streaming ingest| rs\n  subgraph RS[Redshift]\n    rs@svc(redshift, \"Warehouse<br/>RA3 / Serverless\")\n  end\n  rs -->|Spectrum / Iceberg| s3@svc(s3, \"Data lake\")\n  rs -->|data sharing| c2@svc(redshift, \"Consumer<br/>account\")\n  rs --> bi@svc(quicksight, \"BI dashboards\")\n",
+    "diagramCaption": "Redshift is the SQL warehouse at the centre: zero-ETL and streaming in, lake queries out to S3, live data sharing to other accounts, and BI on top."
+  },
+  "vpc": {
+    "diagram": "flowchart TD\n  igw[Internet gateway]:::net\n  subgraph VPC[VPC 10.0.0.0/16]\n    subgraph AZA[AZ a]\n      pa[Public subnet<br/>ALB · NAT]:::net\n      ap[Private app subnet]:::compute\n      da[Isolated DB subnet]:::db\n    end\n    azb[AZ b: same 3 subnets<br/>+ its own NAT]:::note\n    gwe[S3 gateway endpoint]:::net\n  end\n  igw <--> pa\n  igw <--> azb\n  pa --> ap\n  ap -->|0.0.0.0/0 via NAT| pa\n  ap --> da\n  ap --> gwe\n  gwe --> s3@svc(s3)\n",
+    "diagramCaption": "Mirror public, private and isolated subnets in every AZ; private subnets egress through a NAT in their own AZ and reach S3 through a free gateway endpoint."
+  },
+  "cloudfront": {
+    "diagram": "flowchart TD\n  u[Users]:::user --> cf@svc(cloudfront, \"Edge cache\")\n  waf@svc(waf) -.- cf\n  cf -->|/static · OAC| s3@svc(s3)\n  cf -->|/api · no cache| alb@svc(elb, \"ALB\")\n  alb --> ecs@svc(ecs)\n",
+    "diagramCaption": "CloudFront terminates TLS at the edge with WAF, caches static content from S3 via OAC and forwards dynamic paths to an ALB origin by cache behavior."
+  },
+  "route53": {
+    "diagram": "flowchart TD\n  u[Users]:::user -->|app.example.com| r53@svc(route53, \"Hosted zone<br/>+ health checks\")\n  r53 -->|primary| a@svc(elb, \"ALB<br/>us-east-1\")\n  r53 -.->|failover| b@svc(elb, \"ALB<br/>eu-west-1\")\n  a --- n[\"Failover · Latency ·<br/>Weighted · Geo\"]:::note\n",
+    "diagramCaption": "Route 53 routing policies plus health checks steer users between Regional endpoints; alias records point the zone apex at AWS resources for free."
+  },
+  "elb": {
+    "diagram": "flowchart TD\n  u[Clients]:::user --> q{Protocol?}:::note\n  q -->|HTTP/gRPC rules| alb@svc(elb, \"ALB · L7\")\n  q -->|TCP/UDP · static IP| nlb@svc(elb, \"NLB · L4\")\n  q -->|inline appliances| gwlb@svc(elb, \"GWLB · L3\")\n  alb --> tg1@svc(ecs, \"Targets: ECS,<br/>EC2, Lambda\")\n  nlb -->|endpoint service| pl@svc(privatelink)\n  gwlb --> fw[Firewall fleet]:::ext\n",
+    "diagramCaption": "Choose the load balancer by layer: ALB for HTTP routing, NLB for TCP/UDP with static IPs and PrivateLink, GWLB to insert inline security appliances."
+  },
+  "api-gateway": {
+    "diagram": "flowchart TD\n  c[Clients]:::user -->|HTTPS| waf@svc(waf)\n  waf --> api@svc(api-gateway, \"REST API<br/>stage\")\n  cog@svc(cognito, \"User pool JWT\") -.->|authorize| api\n  api -->|proxy| fn@svc(lambda)\n  api -->|direct integration| ddb@svc(dynamodb)\n  api -->|VPC link| alb@svc(elb, \"Private ALB\")\n  fn --> sfn@svc(step-functions, \"Async workflow\")\n  n[\"10k RPS default · 29 s timeout<br/>10 MB payload · usage plans\"]:::note -.- api\n",
+    "diagramCaption": "API Gateway is the managed front door: auth, throttling and validation in front of Lambda, direct AWS service integrations or private backends via VPC link."
+  },
+  "direct-connect": {
+    "diagram": "flowchart TD\n  subgraph DC[Corporate DC]\n    rtr[Customer router<br/>BGP]:::ext\n  end\n  subgraph LOC[DX locations]\n    dx1@svc(direct-connect, \"DX location 1\")\n    dx2@svc(direct-connect, \"DX location 2\")\n  end\n  rtr -->|dedicated 10/100/400G| dx1\n  rtr -->|second link| dx2\n  rtr -. backup IPsec .-> vpn@svc(site-to-site-vpn)\n  dx1 -->|transit VIF| dxgw[DX gateway<br/>global]:::net\n  dx2 -->|transit VIF| dxgw\n  dxgw --> tgw@svc(transit-gateway)\n  vpn --> tgw\n  tgw --> vpcs@svc(vpc, \"VPCs\")\n",
+    "diagramCaption": "Resilient Direct Connect uses two DX locations into a Direct Connect gateway and Transit Gateway, with a VPN as a cheaper backup path; DX is not encrypted by default."
+  },
+  "transit-gateway": {
+    "diagram": "flowchart TD\n  dc[On-prem]:::ext -->|DX transit VIF| dx@svc(direct-connect)\n  br[Branch]:::ext -->|IPsec ECMP| vpn@svc(site-to-site-vpn)\n  dx --> tgw\n  vpn --> tgw\n  tgw@svc(transit-gateway, \"Transit Gateway<br/>route tables\")\n  tgw --> insp@svc(network-firewall, \"Inspection VPC<br/>appliance mode\")\n  tgw <-->|peering| tgw2@svc(transit-gateway, \"TGW other Region\")\n  insp --> prod@svc(vpc, \"Prod VPCs\")\n  insp --> dev@svc(vpc, \"Dev VPCs\")\n  insp --> shr@svc(vpc, \"Shared services\")\n",
+    "diagramCaption": "Transit Gateway is the Regional hub: VPCs, DX and VPN attach once, route tables segment prod from dev, and an inspection VPC filters traffic."
+  },
+  "site-to-site-vpn": {
+    "diagram": "flowchart TD\n  cgw[Customer<br/>gateway]:::ext -->|Tunnel 1| tgw@svc(transit-gateway)\n  cgw -->|Tunnel 2| tgw\n  tgw --> vpc@svc(vpc)\n  tgw --- n[\"1.25 or 5 Gbps<br/>per tunnel · ECMP\"]:::note\n",
+    "diagramCaption": "Every VPN connection has two tunnels in different AZs; terminate on Transit Gateway to use ECMP and large 5 Gbps tunnels for more bandwidth."
+  },
+  "privatelink": {
+    "diagram": "flowchart TD\n  subgraph C1[Consumer VPC A · 10.0.0.0/16]\n    a1[App]:::compute\n    e1@svc(privatelink, \"Interface<br/>endpoint\")\n  end\n  cb[Consumer VPC B<br/>same CIDR · own endpoint]:::note\n  a1 --> e1\n  e1 --> es\n  cb --> es\n  subgraph PROV[Provider account]\n    es[Endpoint service]:::net\n    nlb@svc(elb, \"NLB\")\n    svc@svc(ecs, \"Service\")\n  end\n  es --> nlb --> svc\n",
+    "diagramCaption": "PrivateLink exposes one service behind an NLB to many consumer VPCs as private endpoints, one-way, even when their CIDRs overlap."
+  },
+  "global-accelerator": {
+    "diagram": "flowchart TD\n  u[Users worldwide]:::user -->|2 static anycast IPs| ga@svc(global-accelerator)\n  ga -->|AWS backbone| e1\n  ga -->|traffic dial / failover| e2\n  subgraph RA[us-east-1]\n    e1@svc(elb, \"NLB / ALB\")\n  end\n  subgraph RB[ap-southeast-1]\n    e2@svc(elb, \"NLB / ALB\")\n  end\n  e1 --> a1@svc(ec2)\n  e2 --> a2@svc(ec2)\n  n[\"TCP/UDP · no caching · failover<br/>in seconds, no DNS TTL\"]:::note -.- ga\n",
+    "diagramCaption": "Global Accelerator gives two static anycast IPs that ride the AWS backbone to the healthiest Regional endpoint and fail over in seconds without DNS caching."
+  },
+  "vpc-lattice": {
+    "diagram": "flowchart TD\n  subgraph SN[Service network · shared via RAM]\n    lat@svc(vpc-lattice, \"VPC Lattice<br/>auth policies\")\n  end\n  subgraph A1[Account A · VPC 10.0/16]\n    c1@svc(ecs, \"Orders svc\")\n  end\n  subgraph A2[Account B · VPC 10.0/16]\n    s1@svc(lambda, \"Payments svc\")\n  end\n  subgraph A3[Account C]\n    s2@svc(eks, \"Inventory svc\")\n  end\n  c1 -->|HTTPS · SigV4| lat\n  lat -->|/pay| s1\n  lat -->|/stock| s2\n",
+    "diagramCaption": "VPC Lattice connects services across accounts and overlapping VPCs at the application layer with IAM auth policies, with no routing or peering to manage."
+  },
+  "cloud-wan": {
+    "diagram": "flowchart TD\n  pol[Policy JSON]:::note --> cw@svc(cloud-wan, \"Core network\")\n  cw --> ea[Edge<br/>us-east-1]:::net\n  cw --> eu[Edge<br/>eu-west-1]:::net\n  ea -->|seg: prod| v1@svc(vpc, \"Prod\")\n  eu -->|seg: dev| v2@svc(vpc, \"Dev\")\n  v2 --- br[Branches<br/>SD-WAN]:::ext\n  v1 -. peering .- tgw@svc(transit-gateway, \"Old TGW\")\n",
+    "diagramCaption": "Cloud WAN builds a global network from one policy: core network edges per Region, tag-based attachment into segments, and peering with existing TGWs for migration."
+  },
+  "network-firewall": {
+    "diagram": "flowchart TD\n  spoke@svc(vpc, \"Spoke VPCs\") --> tgw@svc(transit-gateway, \"TGW\")\n  tgw -->|appliance mode| ins\n  subgraph IV[Inspection VPC]\n    subgraph AZA[AZ a]\n      nfa@svc(network-firewall, \"Firewall endpoint\")\n    end\n    subgraph AZB[AZ b]\n      nfb@svc(network-firewall, \"Firewall endpoint\")\n    end\n    ins[TGW attachment subnets]:::net\n    nat[NAT gateways]:::net\n  end\n  ins --> nfa\n  ins --> nfb\n  nfa --> nat\n  nfb --> nat\n  nat --> igw[Internet]:::ext\n  fm[Firewall Manager policies]:::sec -.- nfa\n",
+    "diagramCaption": "Centralized inspection: spokes route through TGW (appliance mode for symmetric flows) to Network Firewall endpoints per AZ before NAT and internet egress."
+  }
+}

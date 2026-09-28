@@ -26,3 +26,9 @@ body { @apply bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100 a
 .prose-md strong { @apply font-semibold; }
 .prose-md table { @apply my-2 w-full text-sm; }
 .prose-md th, .prose-md td { @apply border border-slate-200 p-1.5 text-left dark:border-slate-700; }
+
+/* Mermaid output */
+.diagram-svg svg { max-width: 100% !important; height: auto; margin: 0 auto; display: block; }
+.diagram-full svg { max-width: none !important; width: 100% !important; }
+.diagram-svg .labelBkg, .diagram-svg foreignObject .label-container { background: transparent !important; }
+.diagram-svg .image-shape .label, .diagram-svg .image-shape span { background: transparent !important; }

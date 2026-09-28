@@ -1,0 +1,150 @@
+{
+  "iam": {
+    "diagram": "flowchart TD\n  r[API request]:::user --> a@svc(iam, \"IAM evaluates<br/>all policies\")\n  a --> q1{\"Explicit Deny<br/>anywhere?\"}:::note\n  q1 -->|yes| deny[DENY]:::sec\n  q1 -->|no| q2{\"SCP and RCP<br/>allow?\"}:::note\n  q2 -->|no| deny\n  q2 -->|yes| q3{\"Permissions boundary /<br/>session policy allow?\"}:::note\n  q3 -->|no| deny\n  q3 -->|yes| q4{\"Identity or resource<br/>policy allows?\"}:::note\n  q4 -->|no| deny\n  q4 -->|yes| allow[ALLOW]:::storage\n",
+    "diagramCaption": "Default is implicit deny: an explicit Deny anywhere wins, and an Allow only counts if SCPs/RCPs, boundaries and session policies all permit it too."
+  },
+  "iam-identity-center": {
+    "diagram": "flowchart TD\n  u[Workforce users]:::user --> idp[Entra ID / Okta]:::ext\n  idp -->|SAML + SCIM| ic@svc(iam-identity-center)\n  ic --> ps[Permission sets]:::note\n  subgraph org[AWS Organization]\n    a1[Prod account<br/>role]:::sec\n    a2[Dev account<br/>role]:::sec\n  end\n  ps -->|provisions roles| a1\n  ps -->|provisions roles| a2\n  ic -->|SSO| app[SaaS apps]:::ext\n",
+    "diagramCaption": "One workforce login federated from your IdP; permission sets become IAM roles in every account, so there are no IAM users to manage."
+  },
+  "organizations": {
+    "diagram": "flowchart TD\n  root@svc(organizations, \"Root + mgmt\")\n  root --> sec[Security OU<br/>SCP]:::sec\n  root --> wl[Workloads OU<br/>SCP]:::sec\n  root --> more[More OUs ...]:::note\n  sec --> la[Log archive,<br/>Audit]:::user\n  wl --> prod[Prod OU]:::note\n  prod --> p1[App account]:::user\n",
+    "diagramCaption": "SCPs attach to OUs and are inherited downward; they cap permissions for everyone in member accounts (even root) but never grant any."
+  },
+  "control-tower": {
+    "diagram": "flowchart TD\n  ct@svc(control-tower) --> org@svc(organizations, \"Landing zone OUs\")\n  ct --> af[Account Factory]:::note\n  ct --> ctl[Controls:<br/>preventive / detective / proactive]:::sec\n  ct --> ic@svc(iam-identity-center, \"SSO\")\n  af --> na[New account]:::user\n  subgraph secou[Security OU]\n    log@svc(cloudtrail, \"Log archive<br/>org trail\")\n    aud@svc(config, \"Audit<br/>Config\")\n  end\n  na -->|logs| log\n  na -->|config| aud\n  ctl -.->|SCPs, Config rules, Hooks| na\n",
+    "diagramCaption": "Control Tower assembles Organizations, Identity Center, CloudTrail and Config into a governed landing zone and vends new accounts with guardrails already on."
+  },
+  "kms": {
+    "diagram": "flowchart TD\n  app@svc(lambda, \"App\")\n  app -->|GenerateDataKey| kms@svc(kms, \"KMS key\")\n  kms --> dk[Plaintext +<br/>wrapped data key]:::note\n  dk -->|encrypt locally| enc[Encrypted data]:::storage\n  enc --> s3@svc(s3)\n  dk -.->|store wrapped key| s3\n  s3 -.->|read: Decrypt key| kms\n",
+    "diagramCaption": "Envelope encryption: KMS only encrypts small data keys; your data is encrypted locally and the wrapped key is stored next to it."
+  },
+  "secrets-manager": {
+    "diagram": "flowchart TD\n  app@svc(lambda, \"App\")\n  app -->|GetSecretValue<br/>cached| sm@svc(secrets-manager)\n  sm -->|decrypt| kms@svc(kms)\n  sm -->|every 30 days| rot@svc(lambda, \"Rotation<br/>function\")\n  rot -->|set new password| db@svc(rds)\n  rot -->|store new version| sm\n  app -->|connect| db\n",
+    "diagramCaption": "Apps fetch credentials at runtime; Secrets Manager rotates them on a schedule with a rotation function, so nothing is hard-coded."
+  },
+  "cognito": {
+    "diagram": "flowchart TD\n  u[Mobile / web user]:::user -->|sign in| up@svc(cognito, \"User pool\")\n  up -.->|federate| soc[Google / Apple / SAML]:::ext\n  up -->|JWT tokens| u\n  u -->|Bearer JWT| apigw@svc(api-gateway)\n  apigw -->|authorizer validates| up\n  apigw --> fn@svc(lambda)\n  u -->|exchange JWT| ip@svc(cognito, \"Identity pool\")\n  ip -->|temp AWS creds| s3@svc(s3, \"Direct S3<br/>upload\")\n",
+    "diagramCaption": "User pools authenticate customers and issue JWTs; identity pools exchange those tokens for temporary IAM credentials to call AWS directly."
+  },
+  "waf": {
+    "diagram": "flowchart TD\n  u[Clients and bots]:::user --> cf@svc(cloudfront)\n  cf --> waf@svc(waf, \"Web ACL\")\n  waf --> rules[Rules: managed SQLi/XSS,<br/>rate-based, Bot Control]:::sec\n  rules -->|allowed| alb@svc(elb, \"ALB\")\n  rules -.->|blocked 403| x[Blocked]:::note\n  alb --> app@svc(ecs)\n",
+    "diagramCaption": "WAF inspects layer-7 requests at CloudFront, ALB, API Gateway or AppSync and blocks exploits, floods and bots before they reach your app."
+  },
+  "shield": {
+    "diagram": "flowchart TD\n  atk[DDoS traffic]:::ext --> r53@svc(route53)\n  atk --> cf@svc(cloudfront)\n  subgraph edge[AWS edge]\n    std[Shield Standard<br/>L3/L4, free, automatic]:::sec\n    adv@svc(shield, \"Shield Advanced\")\n  end\n  cf --- std\n  cf --- adv\n  adv --> srt[Shield Response Team<br/>+ cost protection]:::note\n  adv --> waf@svc(waf, \"Auto L7<br/>mitigation\")\n  cf --> alb@svc(elb, \"Origin ALB\")\n",
+    "diagramCaption": "Everyone gets Shield Standard at the edge; Advanced adds L7 auto-mitigation via WAF, 24/7 SRT access and DDoS cost protection."
+  },
+  "guardduty": {
+    "diagram": "flowchart TD\n  ct@svc(cloudtrail, \"CloudTrail events\") --> gd@svc(guardduty)\n  fl@svc(vpc, \"VPC Flow Logs\") --> gd\n  more[DNS, EKS, S3,<br/>RDS, runtime ...]:::note --> gd\n  gd -->|findings| sh@svc(security-hub)\n  gd -->|findings| eb@svc(eventbridge)\n  eb --> fn@svc(lambda, \"Auto-remediate<br/>isolate instance\")\n  eb --> sns@svc(sns, \"Notify SecOps\")\n",
+    "diagramCaption": "GuardDuty reads logs you already have, with no agents or appliances, and emits threat findings you route through EventBridge for automated response."
+  },
+  "security-hub": {
+    "diagram": "flowchart TD\n  gd@svc(guardduty) --> sh@svc(security-hub, \"Security Hub<br/>delegated admin\")\n  in@svc(inspector) --> sh\n  more[Macie, Config CSPM,<br/>partners ...]:::note --> sh\n  sh --> risk[Correlated risks<br/>and exposures]:::note\n  risk --> eb@svc(eventbridge)\n  eb --> tk[Ticketing / SOAR]:::ext\n",
+    "diagramCaption": "Security Hub is the single pane: it aggregates and correlates findings from every account and service, then prioritizes exposures for response."
+  },
+  "inspector": {
+    "diagram": "flowchart TD\n  ins@svc(inspector)\n  ins -->|agent or agentless| ec2@svc(ec2)\n  ins -->|on push + continuous| ecr@svc(ecr)\n  ins -->|packages + code| fn@svc(lambda)\n  ec2 --> cve[CVE and network<br/>reachability findings]:::note\n  ecr --> cve\n  fn --> cve\n  cve --> sh@svc(security-hub)\n  cve --> ssm@svc(systems-manager, \"Patch Manager\")\n",
+    "diagramCaption": "Inspector continuously scans EC2, container images and Lambda for known vulnerabilities; feed findings to Security Hub and patch with Systems Manager."
+  },
+  "macie": {
+    "diagram": "flowchart TD\n  s3a@svc(s3, \"Data lake bucket\") --> mc@svc(macie)\n  s3b@svc(s3, \"Uploads bucket\") --> mc\n  mc --> id[Managed + custom<br/>data identifiers]:::note\n  mc -->|PII found| f[Sensitive data<br/>findings]:::sec\n  mc -->|bucket posture| p[Public / unencrypted<br/>buckets]:::sec\n  f --> sh@svc(security-hub)\n  f --> eb@svc(eventbridge)\n",
+    "diagramCaption": "Macie samples and classifies S3 objects to find PII and flags risky bucket settings, so you know where sensitive data lives."
+  },
+  "cloudtrail": {
+    "diagram": "flowchart TD\n  subgraph org[Member accounts]\n    a1[Account A API calls]:::user\n    a2[Account B API calls]:::user\n  end\n  a1 --> ct@svc(cloudtrail, \"Organization trail\")\n  a2 --> ct\n  ct --> s3@svc(s3, \"Log archive bucket<br/>Object Lock\")\n  ct --> cw@svc(cloudwatch, \"CloudWatch Logs\")\n  ct --> eb@svc(eventbridge, \"Real-time rules\")\n  s3 --> ath@svc(athena, \"Investigate\")\n",
+    "diagramCaption": "One organization trail writes every account's API calls to an immutable log-archive bucket; management events are free, data events cost extra."
+  },
+  "config": {
+    "diagram": "flowchart TD\n  res[EC2, S3, SG, IAM...<br/>resource changes]:::user --> cfg@svc(config, \"Config recorder\")\n  cfg --> hist[Configuration history<br/>and timeline]:::note\n  cfg --> rule{\"Rule: EBS<br/>encrypted?\"}:::note\n  rule -->|compliant| ok[Compliant]:::storage\n  rule -->|noncompliant| rem@svc(systems-manager, \"SSM Automation<br/>remediation\")\n  rule --> agg[Aggregator<br/>all accounts]:::mgmt\n",
+    "diagramCaption": "Config records what every resource looked like over time and evaluates rules against it; pair noncompliant results with SSM auto-remediation."
+  },
+  "acm": {
+    "diagram": "flowchart TD\n  acm@svc(acm) -->|DNS validation| r53@svc(route53)\n  acm -->|auto-renew| cert[Public TLS cert<br/>free]:::sec\n  cert --> cf@svc(cloudfront, \"CloudFront<br/>cert in us-east-1\")\n  cert --> alb@svc(elb, \"ALB HTTPS listener\")\n  cert --> apigw@svc(api-gateway)\n  pca[Private CA]:::sec -.->|internal certs| acm\n",
+    "diagramCaption": "ACM issues and auto-renews public certificates for integrated services at no cost; CloudFront certificates must live in us-east-1."
+  },
+  "detective": {
+    "diagram": "flowchart TD\n  gd@svc(guardduty, \"Finding: unusual<br/>API calls\") --> dt@svc(detective)\n  ct@svc(cloudtrail) --> dt\n  more[Flow Logs,<br/>EKS audit logs ...]:::note --> dt\n  dt --> g[Behavior graph<br/>role, IPs, resources]:::note\n  g --> an[Analyst: scope and<br/>root cause]:::user\n",
+    "diagramCaption": "Detective turns logs into a behavior graph so you can investigate a GuardDuty finding: who did what, from where, and what else they touched."
+  },
+  "security-lake": {
+    "diagram": "flowchart TD\n  ct@svc(cloudtrail) --> sl@svc(security-lake)\n  fl@svc(vpc, \"Flow Logs\") --> sl\n  more[Resolver logs, Security Hub,<br/>third-party ...]:::note --> sl\n  sl -->|OCSF Parquet| s3@svc(s3, \"Your S3 data lake\")\n  s3 --> ath@svc(athena, \"Query\")\n  s3 --> siem[SIEM subscribers]:::ext\n",
+    "diagramCaption": "Security Lake normalizes security logs from all accounts into OCSF in your own S3, so any analytics tool or SIEM can subscribe."
+  },
+  "verified-access": {
+    "diagram": "flowchart TD\n  u[Remote employee<br/>no VPN]:::user -->|HTTPS| va@svc(verified-access)\n  va -->|who?| ic@svc(iam-identity-center, \"Identity provider\")\n  va -->|device healthy?| dev[Device posture<br/>CrowdStrike / Jamf]:::ext\n  va --> pol{\"Cedar policy<br/>allows?\"}:::note\n  subgraph vpc[VPC private subnet]\n    app@svc(elb, \"Internal app ALB\")\n  end\n  pol -->|yes| app\n",
+    "diagramCaption": "Verified Access applies zero trust: every request is checked against identity and device posture policies before reaching a private app, with no VPN."
+  },
+  "bedrock": {
+    "diagram": "flowchart TD\n  u[User question]:::user --> app@svc(lambda, \"App\")\n  app --> g1@svc(bedrock, \"Guardrails<br/>input check\")\n  g1 --> kb@svc(bedrock, \"Knowledge Base<br/>retrieve\")\n  kb --> vs@svc(opensearch, \"Vector store\")\n  docs@svc(s3, \"Docs in S3\") -->|ingest + embed| kb\n  kb -->|context chunks| fm@svc(bedrock, \"Foundation model\")\n  fm --> g2@svc(bedrock, \"Guardrails<br/>output check\")\n  g2 -->|answer + citations| u\n",
+    "diagramCaption": "RAG on Bedrock: retrieve relevant chunks from a Knowledge Base, have the model answer only from them, and wrap both ends in Guardrails."
+  },
+  "bedrock-agentcore": {
+    "diagram": "flowchart TD\n  u[User]:::user --> rt@svc(bedrock-agentcore, \"Runtime<br/>isolated session\")\n  rt --> fm@svc(bedrock, \"Model\")\n  rt <--> mem@svc(bedrock-agentcore, \"Memory\")\n  rt --> gw@svc(bedrock-agentcore, \"Gateway<br/>MCP tools\")\n  id@svc(bedrock-agentcore, \"Identity<br/>OAuth tokens\") -.-> gw\n  gw --> pol[Policy check]:::sec\n  pol --> fn@svc(lambda, \"Tool Lambda\")\n  pol --> api[SaaS / internal API]:::ext\n  pol -.->|traces| obs@svc(cloudwatch, \"Observability\")\n",
+    "diagramCaption": "AgentCore gives agents a production harness: isolated Runtime, managed Memory, Gateway for tools with Policy enforcement, and Identity for credentials."
+  },
+  "sagemaker-ai": {
+    "diagram": "flowchart TD\n  s3@svc(s3, \"Training data\") --> tr@svc(sagemaker-ai, \"Training job<br/>+ tuning\")\n  tr -->|model artifact| reg[Model registry]:::note\n  reg --> q{\"Traffic<br/>pattern?\"}:::note\n  q -->|steady, low latency| rtep@svc(sagemaker-ai, \"Real-time endpoint\")\n  q -->|spiky / idle| sl@svc(sagemaker-ai, \"Serverless\")\n  q -->|large or offline| as@svc(sagemaker-ai, \"Async / Batch\")\n  rtep --> mon@svc(cloudwatch, \"Model Monitor\")\n",
+    "diagramCaption": "SageMaker AI covers the custom-model lifecycle; the key design choice is the inference option that fits the traffic pattern."
+  },
+  "amazon-q-business": {
+    "diagram": "flowchart TD\n  u[Employees]:::user -->|SSO| qb@svc(amazon-q-business)\n  src[SharePoint, Salesforce,<br/>S3 ...]:::ext -->|connectors| idx[Index + ACLs]:::note\n  idx --> qb\n  qb --> pl[Plugins: Jira ...]:::ext\n  qb -->|only permitted<br/>content| ans[Answer]:::user\n",
+    "diagramCaption": "Q Business answers employees from indexed enterprise sources and only returns content each user is already allowed to see."
+  },
+  "amazon-q-developer": {
+    "diagram": "flowchart TD\n  dev[Developer]:::user --> qd@svc(amazon-q-developer)\n  qd --> code[Code, agents,<br/>scans]:::note\n  qd -.->|retiring| kiro[Kiro]:::compute\n  kiro --> eos[EOS<br/>Apr 30 2027]:::note\n",
+    "diagramCaption": "Q Developer is being retired (no new sign-ups since May 15, 2026); AWS directs developers to Kiro for agentic, spec-driven coding."
+  },
+  "nova": {
+    "diagram": "flowchart TD\n  app@svc(lambda, \"App\") -->|Converse API| br@svc(bedrock)\n  br --> lite@svc(nova, \"Nova 2 Lite<br/>fast reasoning\")\n  br --> sonic@svc(nova, \"Nova 2 Sonic<br/>speech to speech\")\n  br --> omni@svc(nova, \"Nova 2 Omni<br/>multimodal\")\n  act@svc(nova, \"Nova Act<br/>browser agents\") --> web[Web UIs]:::ext\n  forge[Nova Forge<br/>custom training]:::note -.-> lite\n",
+    "diagramCaption": "Nova is Amazon's own model family on Bedrock: pick the model by modality and cost, and use Nova Act for UI-automation agents."
+  },
+  "rekognition": {
+    "diagram": "flowchart TD\n  u[User upload]:::user --> s3@svc(s3, \"Images / video\")\n  s3 -->|event| fn@svc(lambda)\n  fn -->|DetectLabels,<br/>DetectModerationLabels| rk@svc(rekognition)\n  rk --> q{\"Unsafe?\"}:::note\n  q -->|yes| rev[Human review queue]:::user\n  q -->|no| db@svc(dynamodb, \"Store labels\")\n",
+    "diagramCaption": "Rekognition adds image and video analysis (labels, faces, moderation) through an API call, typically triggered when media lands in S3."
+  },
+  "textract": {
+    "diagram": "flowchart TD\n  s3@svc(s3, \"Scanned invoices\") -->|event| fn@svc(lambda)\n  fn -->|StartDocumentAnalysis<br/>async| tx@svc(textract)\n  tx -->|job done| sns@svc(sns)\n  sns --> fn2@svc(lambda, \"Parse forms<br/>and tables\")\n  fn2 --> cm@svc(comprehend, \"Entities / PII\")\n  fn2 --> db@svc(dynamodb, \"Extracted fields\")\n",
+    "diagramCaption": "Textract extracts text, forms and tables from documents; use the async API with an SNS notification for multi-page files."
+  },
+  "comprehend": {
+    "diagram": "flowchart TD\n  src[Reviews, tickets]:::user --> s3@svc(s3)\n  s3 --> cm@svc(comprehend)\n  cm --> s1[Sentiment,<br/>entities]:::note\n  cm --> s2[PII]:::sec\n  s1 --> qs@svc(quicksight, \"Dashboard\")\n",
+    "diagramCaption": "Comprehend is pre-trained NLP: sentiment, entities, PII and custom classification without building a model."
+  },
+  "transcribe": {
+    "diagram": "flowchart TD\n  call[Call recordings]:::user --> s3@svc(s3, \"Audio\")\n  s3 --> tr@svc(transcribe, \"Transcribe<br/>Call Analytics\")\n  tr --> red[PII-redacted<br/>transcript]:::sec\n  red --> cm@svc(comprehend, \"Sentiment\")\n  red --> br@svc(bedrock, \"Summarize\")\n  cm --> s3o@svc(s3, \"Insights\")\n  br --> s3o\n",
+    "diagramCaption": "Transcribe turns speech into text (with diarization and PII redaction); downstream NLP or an LLM turns transcripts into insights."
+  },
+  "kiro": {
+    "diagram": "flowchart TD\n  dev[Developer prompt]:::user --> k[Kiro IDE / CLI]:::compute\n  k --> req[requirements.md<br/>EARS stories]:::note\n  req --> des[design.md]:::note\n  des --> tasks[tasks.md]:::note\n  tasks --> code[Implemented code<br/>+ tests]:::compute\n  hook[Agent hooks<br/>on file save]:::note -.-> code\n  code -->|push| cp@svc(codepipeline)\n",
+    "diagramCaption": "Kiro works spec-first: requirements, then design, then tasks, then code, with hooks automating checks; it is the successor path to Q Developer."
+  },
+  "sqs": {
+    "diagram": "flowchart TD\n  p1@svc(lambda, \"Producer\")\n  p2@svc(ecs, \"Producer\")\n  p1 -->|SendMessage| q@svc(sqs, \"Queue\")\n  p2 --> q\n  q -->|poll| c1@svc(lambda, \"Consumer\")\n  q -->|poll| c2@svc(ec2, \"Worker ASG\")\n  q -->|after maxReceiveCount| dlq@svc(sqs, \"Dead-letter queue\")\n  dlq -.->|redrive after fix| q\n  c2 -.->|scale on queue depth| cw@svc(cloudwatch)\n",
+    "diagramCaption": "SQS buffers work between producers and consumers; failed messages move to a DLQ, and queue depth drives consumer scaling."
+  },
+  "sns": {
+    "diagram": "flowchart TD\n  pub@svc(lambda, \"Order service\") -->|Publish| t@svc(sns, \"Topic\")\n  t -->|filter: all| q1@svc(sqs, \"Billing queue\")\n  t -->|filter: type=shipped| q2@svc(sqs, \"Shipping queue\")\n  t --> more[Lambda, Firehose,<br/>email / SMS ...]:::note\n  q1 --> w1@svc(ecs, \"Billing worker\")\n  q2 --> w2@svc(lambda, \"Shipping worker\")\n",
+    "diagramCaption": "SNS fans one message out to many subscribers; put an SQS queue behind each consumer so each can fail or lag independently."
+  },
+  "eventbridge": {
+    "diagram": "flowchart TD\n  src[AWS, apps, SaaS]:::user -->|events| bus@svc(eventbridge, \"Event bus\")\n  bus --> r1{\"Rule:<br/>orders > 100\"}:::note\n  bus --> r2{\"Rule:<br/>EC2 stopped\"}:::note\n  r1 --> sf@svc(step-functions)\n  r1 --> q@svc(sqs)\n  r2 --> sns@svc(sns)\n",
+    "diagramCaption": "EventBridge routes events by content: rules match patterns on the bus and deliver to targets, with retries, DLQs and archive/replay."
+  },
+  "step-functions": {
+    "diagram": "flowchart TD\n  s([Start]):::note --> v@svc(lambda, \"Validate order\")\n  v --> pay@svc(lambda, \"Charge payment\")\n  pay -->|Retry 3x backoff| pay\n  pay --> par[Parallel]:::note\n  par --> inv@svc(dynamodb, \"Reserve stock\")\n  par --> sh@svc(sqs, \"Queue shipping\")\n  pay -.->|Catch error| ref@svc(lambda, \"Refund / compensate\")\n  ref --> fail([Fail]):::sec\n  inv --> ok([Succeed]):::storage\n  sh --> ok\n",
+    "diagramCaption": "Step Functions makes the workflow explicit: each state can Retry with backoff and Catch errors into compensating steps (the saga pattern)."
+  },
+  "appsync": {
+    "diagram": "flowchart TD\n  u[Web / mobile app]:::user -->|GraphQL| as@svc(appsync)\n  cg@svc(cognito) -.->|auth| as\n  as --> r1@svc(dynamodb, \"Resolver: posts\")\n  as --> r2@svc(lambda, \"Resolver: search\")\n  as --> r3@svc(aurora, \"Resolver: users\")\n  r1 -.->|mutation triggers<br/>subscription push| ws[Subscribed clients<br/>WebSocket]:::user\n",
+    "diagramCaption": "AppSync is one managed GraphQL endpoint that resolves fields from many data sources and pushes real-time updates via subscriptions."
+  },
+  "mq": {
+    "diagram": "flowchart TD\n  subgraph onp[On-premises]\n    legacy[JMS / AMQP apps]:::ext\n  end\n  subgraph vpc[VPC]\n    act@svc(mq, \"Active broker<br/>AZ a\")\n    stb@svc(mq, \"Standby broker<br/>AZ b\")\n    app@svc(ec2, \"Migrated app\")\n  end\n  legacy -->|VPN / DX| act\n  app --> act\n  act -.->|failover| stb\n  act --> efs@svc(efs, \"Shared storage\")\n",
+    "diagramCaption": "Amazon MQ lifts existing ActiveMQ or RabbitMQ apps without code changes; for new cloud-native designs prefer SQS/SNS."
+  },
+  "iot-core": {
+    "diagram": "flowchart TD\n  dev[Devices]:::user -->|MQTT + X.509| iot@svc(iot-core)\n  iot --> sh[Device shadow]:::note\n  iot --> re{\"Rules engine<br/>SQL on topics\"}:::note\n  re --> kds@svc(kinesis-data-streams)\n  re --> fn@svc(lambda, \"Alerts\")\n  re --> more[Timestream, S3,<br/>DynamoDB ...]:::note\n",
+    "diagramCaption": "IoT Core authenticates devices over MQTT and its rules engine routes messages to streams, databases, Lambda or S3."
+  }
+}

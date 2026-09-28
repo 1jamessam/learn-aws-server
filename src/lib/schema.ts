@@ -4,6 +4,9 @@ import { z } from 'zod'
 
 const id = z.string().regex(/^[a-z0-9]+(-[a-z0-9]+)*$/, 'kebab-case id')
 const url = z.string().url()
+// Mermaid flowchart source; see src/lib/diagram.ts for the node classes and style rules.
+const diagram = z.string().regex(/^flowchart (TD|TB|LR)\n/, 'must start with "flowchart TD"')
+const diagramFields = { diagram: diagram.optional(), diagramCaption: z.string().optional() }
 
 export const Meta = z.object({
   snapshotDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
@@ -40,6 +43,7 @@ export const Service = z.object({
   recentLaunches: z.array(z.object({ date: z.string(), title: z.string(), url: url.optional() })),
   interviewTips: z.array(z.string()),
   docs: url,
+  ...diagramFields,
 })
 export type Service = z.infer<typeof Service>
 
@@ -53,15 +57,17 @@ export const Pillar = z.object({
   keyQuestions: z.array(z.string()).min(3),
   keyServices: z.array(id),
   antiPatterns: z.array(z.string()),
+  ...diagramFields,
 })
 
 export const WellArchitectedFile = Meta.extend({
   pillars: z.array(Pillar).length(6),
   lenses: z.array(z.object({ name: z.string(), summary: z.string() })),
   drStrategies: z.array(
-    z.object({ name: z.string(), rto: z.string(), rpo: z.string(), cost: z.string(), description: z.string(), services: z.array(id) }),
+    z.object({ name: z.string(), rto: z.string(), rpo: z.string(), cost: z.string(), description: z.string(), services: z.array(id), ...diagramFields }),
   ),
   migrationStrategies: z.array(z.object({ name: z.string(), description: z.string(), example: z.string() })),
+  migrationDecisionTree: diagram.optional(),
 })
 
 export const Scenario = z.object({
@@ -76,6 +82,7 @@ export const Scenario = z.object({
   tradeoffs: z.array(z.string()).min(2),
   followUps: z.array(z.string()).min(2),
   rubric: z.array(z.string()).min(3), // what a strong answer covers
+  ...diagramFields,
 })
 export type Scenario = z.infer<typeof Scenario>
 
@@ -120,4 +127,19 @@ export const LeadershipFile = Meta.extend({
   principles: z.array(LeadershipPrinciple).length(16),
   starTemplate: z.array(z.object({ step: z.string(), guidance: z.string() })),
   interviewLoop: z.array(z.object({ stage: z.string(), description: z.string(), tips: z.array(z.string()) })),
+})
+
+// content/service-diagrams/*.json: per-service "where it fits" diagrams, merged into services at load.
+export const ServiceDiagramsFile = z.record(id, z.object({ diagram, diagramCaption: z.string() }))
+
+// content/study-path.json: which services to learn first.
+export const StudyPathFile = z.object({
+  tiers: z.object({
+    must: z.array(id).min(15), // core: expected in any SA interview
+    should: z.array(id),
+    // everything else is "awareness"
+  }),
+  stages: z
+    .array(z.object({ title: z.string(), why: z.string(), services: z.array(id).min(1), concepts: z.array(z.string()) }))
+    .min(4),
 })

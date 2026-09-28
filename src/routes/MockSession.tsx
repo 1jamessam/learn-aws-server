@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useParams } from 'react-router-dom'
+import { Diagram } from '../components/Diagram'
 import { Bullets, Empty, Md, Page, Section, ServiceChips } from '../components/ui'
 import { leadership, scenarios } from '../lib/content'
 import { useProgress } from '../lib/progress'
@@ -96,6 +97,7 @@ export default function MockSession() {
         <div className="space-y-4">
           {scenario && (
             <>
+              {scenario.diagram && <Diagram src={scenario.diagram} caption={scenario.diagramCaption} title={scenario.title} />}
               <div className="card"><Section title="Reference architecture"><Md>{scenario.referenceArchitecture}</Md></Section>
                 <ServiceChips ids={scenario.services} /></div>
               <div className="card"><Section title="Trade-offs to discuss"><Bullets items={scenario.tradeoffs} /></Section></div>

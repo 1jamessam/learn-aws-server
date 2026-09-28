@@ -1,0 +1,146 @@
+{
+  "athena": {
+    "diagram": "flowchart TD\n  u[Analysts]:::user\n  qs@svc(quicksight)\n  ath@svc(athena, \"Athena<br/>workgroup\")\n  cat@svc(glue, \"Glue Data<br/>Catalog\")\n  s3@svc(s3, \"S3: Parquet / Iceberg,<br/>CloudTrail + ALB logs\")\n  fed@svc(dynamodb, \"Federated<br/>sources\")\n  lim[Pay per TB scanned:<br/>partition + columnar]:::note\n  u -->|SQL| ath\n  qs -->|SQL| ath\n  ath -->|table schema| cat\n  ath -->|scan partitions| s3\n  ath -.->|connector| fed\n  s3 -.- lim\n",
+    "diagramCaption": "Athena is serverless SQL over files in S3 described by the Glue Data Catalog; you pay per data scanned, so partition and use Parquet to cut cost."
+  },
+  "glue": {
+    "diagram": "flowchart TD\n  rds@svc(rds, \"JDBC source\")\n  raw@svc(s3, \"Raw zone\")\n  crawl@svc(glue, \"Crawler\")\n  job@svc(glue, \"Spark ETL job<br/>bookmarks\")\n  cat@svc(glue, \"Data Catalog\")\n  cur@svc(s3, \"Curated zone<br/>Parquet / Iceberg\")\n  ath@svc(athena)\n  rs@svc(redshift, \"Redshift<br/>Spectrum\")\n  emr@svc(emr)\n  raw -->|infer schema| crawl\n  crawl -->|tables| cat\n  rds -->|extract| job\n  raw -->|extract| job\n  job -->|write| cur\n  job -->|update tables| cat\n  cat -->|metastore for| ath\n  cat --> rs\n  cat --> emr\n",
+    "diagramCaption": "Glue is the serverless ETL plus the shared Data Catalog: crawlers and jobs register tables once, and Athena, Redshift Spectrum and EMR all query them."
+  },
+  "emr": {
+    "diagram": "flowchart TD\n  subgraph cluster[EMR on EC2 cluster]\n    p[Primary node<br/>YARN / Spark driver]:::compute\n    c[Core nodes<br/>HDFS + tasks]:::compute\n    t[Task nodes<br/>Spot, compute only]:::compute\n  end\n  in@svc(s3, \"Input data<br/>EMRFS\")\n  out@svc(s3, \"Results\")\n  cat@svc(glue, \"Glue Data<br/>Catalog\")\n  alt[Or: EMR Serverless /<br/>EMR on EKS]:::note\n  p --> c\n  p --> t\n  in -->|read| c\n  in -->|read| t\n  c -->|write| out\n  t -->|write| out\n  cluster -.->|metastore| cat\n  alt -.- cluster\n",
+    "diagramCaption": "Keep data in S3 (EMRFS) so clusters can be transient; run task nodes on Spot because they hold no HDFS data."
+  },
+  "kinesis-data-streams": {
+    "diagram": "flowchart TD\n  subgraph kds[Kinesis data stream]\n    direction TB\n    s1[Shard 1]:::int\n    s2[Shard …]:::int\n  end\n  app[Producers]:::user\n  pk{Partition<br/>key hash}:::note\n  lam@svc(lambda, \"Lambda\")\n  flink@svc(managed-flink, \"Flink<br/>fan-out\")\n  fh@svc(data-firehose)\n  s3@svc(s3)\n  app -->|PutRecords| pk\n  pk --> s1\n  pk --> s2\n  kds --> lam\n  kds --> flink\n  kds --> fh\n  fh --> s3\n",
+    "diagramCaption": "The partition key picks the shard (1 MB/s in each), which gives per-key ordering; many consumers read the same records independently and can replay within retention."
+  },
+  "data-firehose": {
+    "diagram": "flowchart TD\n  app[Direct PUT<br/>apps]:::user\n  kds@svc(kinesis-data-streams)\n  cwl@svc(cloudwatch, \"CloudWatch<br/>Logs\")\n  fh@svc(data-firehose, \"Firehose<br/>buffer size / time\")\n  lam@svc(lambda, \"Transform<br/>Lambda\")\n  s3@svc(s3, \"S3 Parquet<br/>dynamic partitions\")\n  more[Redshift, OpenSearch,<br/>Splunk, HTTP …]:::analytics\n  app --> fh\n  kds --> fh\n  cwl -->|subscription| fh\n  fh <-.->|records| lam\n  fh -->|convert + deliver| s3\n  fh --> more\n",
+    "diagramCaption": "Firehose is zero-admin delivery: it buffers (near real time, not real time), optionally transforms, and loads into S3, Redshift, OpenSearch or HTTP without consumers to run."
+  },
+  "msk": {
+    "diagram": "flowchart TD\n  subgraph cluster[MSK cluster]\n    direction TB\n    b1[AZ a<br/>broker]:::int\n    b2[AZ b<br/>broker]:::int\n    b3[AZ c<br/>broker]:::int\n  end\n  prod[Producers]:::user\n  cons@svc(eks, \"Consumer<br/>groups\")\n  conn@svc(msk, \"MSK Connect\")\n  rep@svc(msk, \"Replicator<br/>other Region\")\n  s3@svc(s3)\n  prod -->|Kafka API| cluster\n  cluster --> cons\n  cluster --> conn\n  cluster -.-> rep\n  conn --> s3\n",
+    "diagramCaption": "MSK is managed Apache Kafka: brokers replicate partitions across AZs, and you keep Kafka clients, Connect and consumer groups unchanged."
+  },
+  "opensearch": {
+    "diagram": "flowchart TD\n  subgraph dom[OpenSearch domain, up to 3 AZs]\n    os@svc(opensearch, \"Hot data nodes\")\n    uw[UltraWarm / cold<br/>S3-backed]:::storage\n  end\n  logs[App / VPC Flow logs]:::ext\n  fh@svc(data-firehose)\n  ddb@svc(dynamodb, \"DynamoDB<br/>zero-ETL\")\n  kb@svc(bedrock, \"Bedrock KB<br/>vector search\")\n  dash[OpenSearch<br/>Dashboards]:::analytics\n  u[Ops / search users]:::user\n  logs --> fh\n  fh -->|index| os\n  ddb -->|sync| os\n  kb -->|k-NN query| os\n  os -->|age out| uw\n  os -->|visualize| dash\n  dash --> u\n",
+    "diagramCaption": "OpenSearch handles full-text search, log analytics and vector search; tier aging data from hot nodes to S3-backed UltraWarm and cold to cut cost."
+  },
+  "quicksight": {
+    "diagram": "flowchart TD\n  ath@svc(athena)\n  rs@svc(redshift)\n  spice[SPICE<br/>in-memory]:::analytics\n  qs@svc(quicksight, \"Quick Sight<br/>dashboards\")\n  u[Analysts<br/>row-level security]:::user\n  app[SaaS app<br/>embedded]:::user\n  quick[Amazon Quick<br/>successor to Q Business]:::ai\n  ath -->|import| spice\n  rs -.->|direct query| qs\n  spice --> qs\n  qs --> u\n  qs -->|embed| app\n  qs ---|part of| quick\n",
+    "diagramCaption": "Quick Sight is serverless BI: import into SPICE for fast dashboards or direct-query sources, secure with row-level security, and embed; it is now part of Amazon Quick."
+  },
+  "lake-formation": {
+    "diagram": "flowchart TD\n  subgraph prod[Producer account]\n    s3@svc(s3, \"S3 data lake\")\n    cat@svc(glue, \"Glue Data<br/>Catalog\")\n    filt[Data filters<br/>row / cell]:::note\n    lf@svc(lake-formation, \"Lake Formation<br/>LF-Tags\")\n  end\n  subgraph cons[Consumer account]\n    ath@svc(athena)\n    rs@svc(redshift, \"Redshift<br/>Spectrum\")\n    emr@svc(emr)\n  end\n  s3 -->|registered location| lf\n  cat -->|metadata| lf\n  filt -.- lf\n  lf -->|grants shared via RAM| cons\n",
+    "diagramCaption": "The Glue catalog holds metadata; Lake Formation decides who sees which databases, columns and rows, and every engine enforces the same grants, even across accounts."
+  },
+  "sagemaker-unified-studio": {
+    "diagram": "flowchart TD\n  subgraph proj[Unified Studio project]\n    sql@svc(athena, \"SQL: Athena,<br/>Redshift\")\n    spark@svc(emr, \"Spark: EMR,<br/>Glue\")\n    ml@svc(sagemaker-ai, \"ML + GenAI:<br/>SageMaker, Bedrock\")\n  end\n  u[Data, analytics<br/>and ML users]:::user\n  idc@svc(iam-identity-center)\n  sus@svc(sagemaker-unified-studio, \"Unified Studio<br/>domain\")\n  sc[SageMaker Catalog<br/>data products]:::analytics\n  lf@svc(lake-formation)\n  lake@svc(s3-tables, \"Lakehouse<br/>Iceberg\")\n  u -->|SSO| idc\n  idc --> sus\n  sus --> proj\n  proj -->|discover + subscribe| sc\n  sc -->|grants| lf\n  lf --> lake\n",
+    "diagramCaption": "Unified Studio is one governed workspace: users sign in once and use SQL, Spark, ML and GenAI tools on data found in SageMaker Catalog and secured by Lake Formation."
+  },
+  "managed-flink": {
+    "diagram": "flowchart TD\n  kds@svc(kinesis-data-streams)\n  msk@svc(msk)\n  app@svc(managed-flink, \"Flink app<br/>windows, joins, state\")\n  cp[Checkpoints +<br/>snapshots]:::note\n  s3@svc(s3, \"S3 / Iceberg\")\n  more[OpenSearch, DynamoDB,<br/>output stream …]:::analytics\n  kds --> app\n  msk --> app\n  app -.->|exactly-once state| cp\n  app -->|streaming ETL| s3\n  app -->|aggregates, alerts| more\n",
+    "diagramCaption": "Managed Flink does stateful stream processing (windows, joins, pattern detection) on Kinesis or MSK with exactly-once state via checkpoints."
+  },
+  "cloudwatch": {
+    "diagram": "flowchart TD\n  ec2@svc(ec2)\n  lam@svc(lambda)\n  app[App logs<br/>EMF / agent]:::compute\n  m@svc(cloudwatch, \"Metrics\")\n  logs@svc(cloudwatch, \"Logs\")\n  al@svc(cloudwatch, \"Alarm<br/>threshold / anomaly\")\n  sns@svc(sns)\n  asg@svc(ec2-auto-scaling)\n  ssm@svc(systems-manager, \"SSM Automation\")\n  ec2 -->|metrics| m\n  lam -->|metrics| m\n  app -->|logs| logs\n  logs -->|metric filter| m\n  m --> al\n  al -->|notify| sns\n  al -->|scale| asg\n  al -->|remediate| ssm\n",
+    "diagramCaption": "CloudWatch turns metrics and logs into alarms, and alarms drive actions: SNS notifications, Auto Scaling and automated remediation."
+  },
+  "cloudformation": {
+    "diagram": "flowchart TD\n  dev[Engineer / pipeline]:::user\n  tpl[Template<br/>YAML / JSON]:::mgmt\n  hook[Hooks / Guard<br/>rules]:::note\n  cs@svc(cloudformation, \"Change set<br/>preview\")\n  stack@svc(cloudformation, \"Stack\")\n  vpc@svc(vpc)\n  ec2@svc(ec2)\n  rds@svc(rds, \"RDS<br/>DeletionPolicy: Snapshot\")\n  ss@svc(cloudformation, \"StackSets\")\n  accts[Org accounts<br/>and Regions]:::ext\n  dev --> tpl\n  tpl -->|create| cs\n  cs -->|execute| stack\n  hook -.->|pre-provision check| stack\n  stack -->|provision, rollback on failure| vpc\n  stack --> ec2\n  stack --> rds\n  tpl --> ss\n  ss -->|deploy| accts\n",
+    "diagramCaption": "CloudFormation turns a template into a stack: preview with change sets, roll back on failure, protect stateful resources with DeletionPolicy, and fan out with StackSets."
+  },
+  "cdk": {
+    "diagram": "flowchart TD\n  code[App code<br/>TypeScript / Python]:::user\n  synth[cdk synth]:::mgmt\n  tpl[CloudFormation<br/>template]:::mgmt\n  boot@svc(s3, \"Bootstrap bucket<br/>+ ECR assets\")\n  cfn@svc(cloudformation, \"Stack deploy<br/>change set\")\n  apigw@svc(api-gateway)\n  lam@svc(lambda)\n  ddb@svc(dynamodb)\n  pipe@svc(codepipeline, \"CDK Pipelines\")\n  code -->|L1 / L2 / L3 constructs| synth\n  synth --> tpl\n  synth -->|assets| boot\n  tpl -->|cdk deploy| cfn\n  boot --> cfn\n  cfn --> apigw\n  cfn --> lam\n  cfn --> ddb\n  pipe -.->|automates| synth\n",
+    "diagramCaption": "CDK is code that synthesizes CloudFormation: constructs become a template plus assets, and CloudFormation still does the deploying."
+  },
+  "systems-manager": {
+    "diagram": "flowchart TD\n  admin[Admin]:::user\n  patch@svc(systems-manager, \"Patch /<br/>Run Command\")\n  sess@svc(systems-manager, \"Session<br/>Manager\")\n  ep[SSM VPC<br/>endpoints]:::net\n  ec2@svc(ec2, \"Private EC2<br/>+ SSM Agent\")\n  ps@svc(systems-manager, \"Parameter<br/>Store\")\n  kms@svc(kms)\n  admin -->|IAM, no SSH| sess\n  sess --> ep\n  patch --> ep\n  ep -->|agent calls out on 443| ec2\n  ec2 --> ps\n  ps -.->|SecureString| kms\n",
+    "diagramCaption": "Systems Manager reaches instances through the agent over outbound HTTPS, so there is no SSH or bastion; private subnets need the SSM VPC endpoints."
+  },
+  "trusted-advisor": {
+    "diagram": "flowchart TD\n  acct[AWS accounts<br/>and resources]:::ext\n  plan[Business / Enterprise:<br/>full checks + API]:::note\n  ta@svc(trusted-advisor, \"Trusted Advisor<br/>checks\")\n  checks[Cost, security, fault<br/>tolerance, perf, quotas]:::note\n  eb@svc(eventbridge)\n  lam@svc(lambda, \"Auto-remediate\")\n  sns@svc(sns)\n  acct -->|scanned| ta\n  plan -.- ta\n  ta --> checks\n  ta -->|check status change| eb\n  eb --> lam\n  eb --> sns\n",
+    "diagramCaption": "Trusted Advisor runs rule-based checks across cost, security, fault tolerance, performance and quotas; the full set needs Business Support or higher, and EventBridge can act on results."
+  },
+  "x-ray": {
+    "diagram": "flowchart TD\n  u[Request]:::user\n  apigw@svc(api-gateway)\n  lam@svc(lambda)\n  ddb@svc(dynamodb)\n  xr@svc(x-ray, \"X-Ray service map<br/>SDK in maintenance\")\n  cw@svc(cloudwatch, \"Application Signals<br/>Transaction Search\")\n  samp[Sampling: 1 req/s<br/>+ 5% of the rest]:::note\n  u --> apigw\n  apigw -->|trace header| lam\n  lam --> ddb\n  lam -.->|X-Ray SDK, EoS Feb 2027| xr\n  lam ==>|OpenTelemetry ADOT / CW agent| cw\n  xr -.->|views move to| cw\n  samp -.- xr\n",
+    "diagramCaption": "Tracing follows one request across services; instrument new work with OpenTelemetry into CloudWatch Application Signals, since the X-Ray SDKs and daemon are in maintenance."
+  },
+  "well-architected-tool": {
+    "diagram": "flowchart TD\n  sa[SA + workload team]:::user\n  pillars[6 pillars + lenses<br/>Serverless, SaaS, GenAI]:::note\n  ta@svc(trusted-advisor)\n  wat@svc(well-architected-tool, \"WA Tool<br/>workload review\")\n  hri[High / medium<br/>risk issues]:::note\n  plan[Improvement plan]:::mgmt\n  ms[Milestone,<br/>re-review]:::mgmt\n  sa -->|answer questions| wat\n  pillars -.- wat\n  ta -->|resource checks| wat\n  wat --> hri\n  hri --> plan\n  plan --> ms\n  ms -.->|next review| wat\n",
+    "diagramCaption": "The WA Tool is a question-driven review against the six pillars (plus lenses) that produces high-risk issues and an improvement plan you track by milestones."
+  },
+  "service-catalog": {
+    "diagram": "flowchart TD\n  admin[Platform team]:::user\n  tpl[CloudFormation /<br/>Terraform template]:::mgmt\n  prod@svc(service-catalog, \"Product v1, v2\")\n  dev[Developer<br/>no direct IAM]:::user\n  port@svc(service-catalog, \"Portfolio\")\n  org@svc(organizations, \"Shared to OUs\")\n  stack@svc(cloudformation, \"Provisioned<br/>product\")\n  ct@svc(control-tower, \"Account Factory<br/>built on it\")\n  ec2@svc(ec2)\n  rds@svc(rds)\n  admin --> tpl\n  tpl -->|publish| prod\n  prod --> port\n  dev -->|self-service launch| port\n  port -->|share| org\n  port -->|launch constraint role| stack\n  port -.-> ct\n  stack --> ec2\n  stack --> rds\n",
+    "diagramCaption": "Service Catalog lets users self-provision only approved templates; the launch constraint role deploys the resources, so users need no direct IAM permissions."
+  },
+  "elastic-disaster-recovery": {
+    "diagram": "flowchart TD\n  subgraph src[Source: on-prem, other cloud or Region A]\n    srv[Servers +<br/>replication agent]:::ext\n  end\n  subgraph aws[Recovery Region]\n    subgraph stg[Staging subnet]\n      rep[Replication servers<br/>low cost]:::compute\n      ebs@svc(ebs, \"EBS + point-in-time<br/>snapshots\")\n    end\n    subgraph rec[Recovery subnet]\n      ec2@svc(ec2, \"Recovered EC2\")\n    end\n  end\n  drs@svc(elastic-disaster-recovery, \"DRS recovery plan<br/>drill / failover\")\n  srv -->|continuous block replication| rep\n  rep --> ebs\n  drs -->|launch in minutes| ec2\n  ebs --> ec2\n  ec2 -.->|failback| srv\n",
+    "diagramCaption": "DRS keeps a cheap, continuously replicated copy (RPO seconds) and launches full EC2 servers only at recovery or drill time (RTO minutes)."
+  },
+  "application-recovery-controller": {
+    "diagram": "flowchart TD\n  arc@svc(application-recovery-controller, \"ARC\")\n  r53@svc(route53)\n  alb1@svc(elb, \"Region A ALB\")\n  r2[Region B<br/>standby]:::compute\n  aza[AZ a<br/>healthy]:::compute\n  azb[AZ b<br/>impaired]:::note\n  arc -->|Region switch| r53\n  r53 -->|active| alb1\n  r53 -.->|failover| r2\n  arc -->|zonal shift| alb1\n  alb1 --> aza\n  alb1 -.-> azb\n",
+    "diagramCaption": "ARC moves traffic deliberately: zonal shift drains an impaired AZ, and Region switch plans or routing controls fail over Regions through data-plane-only actions."
+  },
+  "resilience-hub": {
+    "diagram": "flowchart TD\n  app[Application<br/>stacks, EKS, tags]:::ext\n  pol[Policy: RTO / RPO<br/>per disruption type]:::note\n  dep[Dependency discovery<br/>DNS logs]:::note\n  rh@svc(resilience-hub, \"Resilience assessment<br/>AI failure modes\")\n  score[Resilience score<br/>org-wide view]:::mgmt\n  al@svc(cloudwatch, \"Alarms + SOP<br/>runbooks\")\n  fis@svc(fault-injection-service, \"FIS experiments\")\n  app --> rh\n  pol -.->|targets| rh\n  dep -.-> rh\n  rh --> score\n  rh -->|recommends| al\n  rh -->|recommends| fis\n  fis -->|test results| rh\n",
+    "diagramCaption": "Resilience Hub checks a deployed app against RTO/RPO targets and recommends the alarms, runbooks and FIS experiments that prove it can recover."
+  },
+  "fault-injection-service": {
+    "diagram": "flowchart TD\n  subgraph az[AZ a]\n    direction TB\n    ec2@svc(ec2, \"EC2 / ECS\")\n    db@svc(aurora, \"Aurora\")\n  end\n  tpl[Template:<br/>actions, targets]:::note\n  fis@svc(fault-injection-service, \"FIS experiment\")\n  cw@svc(cloudwatch, \"Stop-condition<br/>alarm\")\n  arc@svc(application-recovery-controller, \"ARC<br/>autoshift\")\n  tpl --> fis\n  fis -->|inject fault| ec2\n  fis --> db\n  ec2 -->|metrics| cw\n  cw -->|halt| fis\n  fis -.->|recover| arc\n",
+    "diagramCaption": "FIS injects real faults into tagged targets, with a CloudWatch alarm as the stop condition, to prove that multi-AZ designs, alarms and recovery actions work."
+  },
+  "codepipeline": {
+    "diagram": "flowchart TD\n  subgraph pipe[CodePipeline V2]\n    src[Source stage]:::mgmt\n    build@svc(codebuild, \"Build + test\")\n    stg@svc(cloudformation, \"Deploy staging<br/>account\")\n    appr{Manual<br/>approval}:::note\n    prd@svc(ecs, \"Deploy prod<br/>account\")\n  end\n  gh[GitHub via<br/>CodeConnections]:::ext\n  art@svc(s3, \"Artifacts<br/>KMS encrypted\")\n  rb[Auto rollback<br/>on failure]:::note\n  gh -->|push / tag trigger| src\n  src --> build\n  build --> stg\n  stg --> appr\n  appr --> prd\n  build -.-> art\n  rb -.- prd\n",
+    "diagramCaption": "CodePipeline orchestrates the release (source, build, test, approval, deploy) and deploys across accounts by assuming roles, passing artifacts through encrypted S3."
+  },
+  "codebuild": {
+    "diagram": "flowchart TD\n  subgraph vpc[Your VPC]\n    db@svc(rds, \"Test DB\")\n  end\n  trig@svc(codepipeline, \"Pipeline or<br/>GitHub Actions runner\")\n  spec[buildspec.yml<br/>install, build, post_build]:::note\n  sec@svc(secrets-manager)\n  cb@svc(codebuild, \"Ephemeral build<br/>container\")\n  out@svc(s3, \"Cache, artifacts,<br/>test reports\")\n  ecr@svc(ecr, \"Push image\")\n  trig --> cb\n  spec -.- cb\n  sec -->|env vars| cb\n  cb -->|integration tests| db\n  cb --> out\n  cb -->|docker build| ecr\n",
+    "diagramCaption": "CodeBuild runs each build in a fresh managed container driven by buildspec.yml, with no build servers to patch; attach it to a VPC to reach private resources."
+  },
+  "migration-hub": {
+    "diagram": "flowchart TD\n  old@svc(migration-hub, \"Migration Hub<br/>closed to new customers\")\n  ads[Application Discovery<br/>maintenance]:::note\n  dc[On-prem DC]:::ext\n  tr@svc(aws-transform, \"AWS Transform<br/>assess + wave plans\")\n  mgn@svc(application-migration-service)\n  dms@svc(dms)\n  ec2@svc(ec2)\n  aur@svc(aurora)\n  ads -.- old\n  old -.->|successor| tr\n  dc -->|inventory| tr\n  tr -->|server waves| mgn\n  tr -->|database waves| dms\n  mgn --> ec2\n  dms --> aur\n",
+    "diagramCaption": "Migration Hub only tracked migrations and is closed to new customers; plan with AWS Transform and execute with MGN for servers and DMS for databases."
+  },
+  "application-migration-service": {
+    "diagram": "flowchart TD\n  subgraph dc[Source: on-prem, VMware, other cloud]\n    srv[Server +<br/>replication agent]:::ext\n  end\n  subgraph aws[AWS target Region]\n    subgraph stg[Staging subnet]\n      rep[Replication servers]:::compute\n      ebs@svc(ebs, \"Staging EBS\")\n    end\n    subgraph tgt[Target subnet]\n      test@svc(ec2, \"1. Test instance\")\n      cut@svc(ec2, \"2. Cutover instance\")\n    end\n  end\n  mgn@svc(application-migration-service, \"MGN<br/>launch template\")\n  post@svc(systems-manager, \"Post-launch<br/>actions\")\n  srv -->|continuous block replication| rep\n  rep --> ebs\n  mgn -->|non-disruptive test| test\n  mgn -->|cutover in minutes| cut\n  ebs --> test\n  ebs --> cut\n  cut -.-> post\n",
+    "diagramCaption": "MGN continuously replicates whole servers into a cheap staging area, so you can test-launch without disruption and cut over in minutes."
+  },
+  "dms": {
+    "diagram": "flowchart TD\n  subgraph onp[On-prem]\n    ora[(Oracle source)]:::db\n  end\n  subgraph aws[AWS]\n    ri@svc(dms, \"Replication instance<br/>or DMS Serverless\")\n    tgt@svc(aurora, \"Aurora<br/>PostgreSQL\")\n    s3@svc(s3, \"S3 data lake\")\n  end\n  sc@svc(dms, \"Schema Conversion\")\n  val[Validation<br/>compare rows]:::note\n  app[App cutover<br/>when lag near 0]:::user\n  sc -->|1. convert schema + code| tgt\n  ora -->|2. full load| ri\n  ora -->|3. CDC from logs| ri\n  ri --> tgt\n  ri -.->|ongoing replication| s3\n  ri -.- val\n  tgt --> app\n",
+    "diagramCaption": "DMS migrates databases with near-zero downtime: convert the schema, full load, then keep CDC running until you cut the app over."
+  },
+  "datasync": {
+    "diagram": "flowchart TD\n  subgraph onp[On-prem]\n    direction TB\n    nas[NFS / SMB<br/>HDFS]:::ext\n    agent[DataSync<br/>agent VM]:::compute\n  end\n  other[Other clouds]:::ext\n  link@svc(direct-connect, \"DX or<br/>internet, TLS\")\n  ds@svc(datasync, \"DataSync task<br/>verify, schedule\")\n  dst@svc(s3, \"S3 / EFS / FSx\")\n  nas --> agent\n  agent --> link\n  link --> ds\n  other -.-> ds\n  ds -->|incremental| dst\n",
+    "diagramCaption": "DataSync is the online bulk mover from NFS/SMB/HDFS or other clouds into S3, EFS or FSx, with encryption, scheduling and integrity checks; it replaces Snowball Edge for new customers."
+  },
+  "snow-family": {
+    "diagram": "flowchart TD\n  dc[Data center<br/>large dataset]:::ext\n  old@svc(snow-family, \"Snowball Edge<br/>existing customers only\")\n  s3@svc(s3, \"Import to S3\")\n  dx@svc(direct-connect)\n  ds@svc(datasync, \"DataSync<br/>online transfer\")\n  op@svc(outposts, \"Outposts<br/>connected edge\")\n  ret[Snowmobile, Snowcone<br/>retired]:::note\n  dc -.->|copy, ship encrypted| old\n  old -.-> s3\n  dc ==>|new customers| dx\n  dx --> ds\n  ds --> s3\n  old -.->|edge compute successor| op\n  ret -.- old\n",
+    "diagramCaption": "Snowball Edge is closed to new customers: move data online with DataSync (over Direct Connect for big volumes) and use Outposts for edge compute."
+  },
+  "transfer-family": {
+    "diagram": "flowchart TD\n  partner[Partners<br/>SFTP / FTPS / AS2]:::ext\n  tf@svc(transfer-family, \"SFTP endpoint<br/>VPC + Elastic IPs\")\n  idp@svc(lambda, \"Custom IdP\")\n  s3@svc(s3, \"S3 or EFS\")\n  wf[Managed workflow<br/>copy, tag, decrypt]:::note\n  proc@svc(lambda, \"Process file\")\n  conn@svc(transfer-family, \"SFTP connector\")\n  ext[Partner SFTP server]:::ext\n  partner -->|upload| tf\n  tf -->|authenticate| idp\n  tf -->|store| s3\n  tf -->|on upload| wf\n  wf --> proc\n  s3 --> conn\n  conn -->|push / pull| ext\n",
+    "diagramCaption": "Transfer Family gives partners the SFTP/FTPS/AS2 endpoints they expect while files land directly in S3 or EFS, with no file servers to run."
+  },
+  "aws-transform": {
+    "diagram": "flowchart TD\n  src[VMware, mainframe,<br/>.NET, Java …]:::ext\n  ide[Kiro / VS Code]:::user\n  mh@svc(migration-hub, \"Migration Hub<br/>closed\")\n  tr@svc(aws-transform, \"Transform agents\")\n  team[Team reviews<br/>and approves]:::user\n  plan[Wave plan +<br/>business case]:::note\n  code[Modernized code<br/>pull requests]:::compute\n  mgn@svc(application-migration-service)\n  ec2@svc(ec2)\n  src --> tr\n  ide -.-> tr\n  mh -.->|replaced by| tr\n  tr -->|proposes| team\n  team --> plan\n  team --> code\n  plan -->|orchestrates| mgn\n  mgn --> ec2\n",
+    "diagramCaption": "AWS Transform uses AI agents to assess, plan and modernize (VMware, mainframe, .NET, Java) with humans approving each step; it replaces Migration Hub and drives MGN."
+  },
+  "cost-explorer": {
+    "diagram": "flowchart TD\n  bill[Billing data]:::ext\n  tags[Cost allocation<br/>tags]:::note\n  ce@svc(cost-explorer)\n  rep[Spend +<br/>forecast]:::mgmt\n  rec[SP / RI<br/>recommendations]:::note\n  anom@svc(cost-explorer, \"Anomaly<br/>Detection\")\n  bud@svc(budgets)\n  sp@svc(savings-plans)\n  sns@svc(sns)\n  bill --> ce\n  tags -.-> ce\n  ce --> rep\n  ce --> rec\n  ce --> anom\n  rep -.-> bud\n  rec --> sp\n  anom --> sns\n",
+    "diagramCaption": "Cost Explorer is for analysis: slice spend by service, account or tag (tags must be activated), forecast, and get Savings Plans recommendations."
+  },
+  "budgets": {
+    "diagram": "flowchart TD\n  act[Actual spend]:::mgmt\n  fc[Forecasted spend]:::mgmt\n  b@svc(budgets, \"Monthly budget\")\n  thr{Over 80% or<br/>100%?}:::note\n  sns@svc(sns)\n  chat[Email / Slack]:::user\n  action[Budget action<br/>optional approval]:::note\n  scp@svc(organizations, \"Apply SCP /<br/>IAM deny\")\n  ec2@svc(ec2, \"Stop EC2 / RDS\")\n  act --> b\n  fc --> b\n  b --> thr\n  thr -->|alert| sns\n  sns --> chat\n  thr -->|exceeded| action\n  action --> scp\n  action --> ec2\n",
+    "diagramCaption": "Budgets alert on actual or forecasted spend, and budget actions can enforce a guardrail (an SCP or IAM policy, or stopping instances) when a threshold is crossed."
+  },
+  "savings-plans": {
+    "diagram": "flowchart TD\n  usage[Hourly usage]:::note\n  base[Steady<br/>baseline]:::mgmt\n  od[Spiky part<br/>On-Demand]:::note\n  co@svc(compute-optimizer, \"1. Rightsize\")\n  ce@svc(cost-explorer, \"2. Recommend\")\n  sp@svc(savings-plans, \"3. Commit $/hr\")\n  csp[Compute SP<br/>up to 66%]:::compute\n  isp[EC2 Instance SP<br/>up to 72%]:::compute\n  dsp[Database SP<br/>1-year]:::db\n  usage --> base\n  usage --> od\n  base --> co\n  co --> ce\n  ce --> sp\n  sp --> csp\n  sp --> isp\n  sp --> dsp\n",
+    "diagramCaption": "Rightsize first, then commit a $/hour spend to cover only the steady baseline; the spiky remainder stays On-Demand or Spot."
+  },
+  "compute-optimizer": {
+    "diagram": "flowchart TD\n  ec2@svc(ec2, \"EC2 + ASGs\")\n  lam@svc(lambda)\n  more[EBS, RDS,<br/>ECS on Fargate …]:::compute\n  cw@svc(cloudwatch, \"14+ days metrics<br/>agent for memory\")\n  co@svc(compute-optimizer, \"ML recommendations\")\n  rec[Over / under-provisioned,<br/>idle, Graviton]:::note\n  hub[Cost Optimization Hub<br/>org-wide]:::mgmt\n  sp@svc(savings-plans, \"Then commit\")\n  ec2 --> cw\n  lam --> cw\n  more --> cw\n  cw --> co\n  co --> rec\n  rec --> hub\n  hub -->|after resizing| sp\n",
+    "diagramCaption": "Compute Optimizer uses ML on CloudWatch utilization to rightsize EC2, ASGs, EBS, Lambda and RDS; install the agent for memory data, and rightsize before buying Savings Plans."
+  }
+}

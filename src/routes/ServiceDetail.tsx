@@ -1,20 +1,52 @@
 import { Link, useParams } from 'react-router-dom'
+import { Diagram } from '../components/Diagram'
+import { ServiceIcon } from '../components/ServiceIcon'
+import { TierBadge } from '../components/TierBadge'
 import { Bullets, Empty, Page, Section } from '../components/ui'
-import { categoryLabels, flashcards, quiz, scenarios, serviceById } from '../lib/content'
+import { categoryLabels, flashcards, quiz, scenarios, serviceById, studyPath, tierOf } from '../lib/content'
+import { useProgress } from '../lib/progress'
+import { today } from '../lib/srs'
+
+const pathOrder = studyPath.stages.flatMap((s) => s.services)
 
 export default function ServiceDetail() {
   const { id = '' } = useParams()
+  const { progress, update } = useProgress()
   const s = serviceById.get(id)
   if (!s) return <Page title="Not found" back><Empty>Unknown service “{id}”.</Empty></Page>
 
   const relatedScenarios = scenarios.scenarios.filter((x) => x.services.includes(id))
   const cardCount = flashcards.cards.filter((c) => c.serviceId === id).length
   const quizCount = quiz.questions.filter((q) => q.services.includes(id)).length
+  const learned = !!progress.learned[id]
+  const toggleLearned = () =>
+    update((p) => {
+      const next = { ...p.learned }
+      if (learned) delete next[id]
+      else next[id] = today()
+      return { ...p, learned: next }
+    })
+  const pos = pathOrder.indexOf(id)
+  const nextInPath = pos >= 0 ? pathOrder.slice(pos + 1).find((x) => !progress.learned[x]) ?? pathOrder[pos + 1] : undefined
 
   return (
     <Page title={s.name} back>
-      <div className="mb-1 text-xs font-semibold uppercase text-accent">{categoryLabels[s.category]}</div>
-      <p className="mb-5 text-[17px] leading-snug">{s.oneLiner}</p>
+      <div className="mb-4 flex items-center gap-4">
+        <ServiceIcon id={s.id} size={72} />
+        <div className="min-w-0">
+          <div className="mb-1 flex flex-wrap items-center gap-2">
+            <span className="text-xs font-semibold uppercase text-accent">{categoryLabels[s.category]}</span>
+            <TierBadge tier={tierOf(s.id)} />
+          </div>
+          <p className="text-[17px] leading-snug">{s.oneLiner}</p>
+        </div>
+      </div>
+
+      {s.diagram && (
+        <div className="mb-4">
+          <Diagram src={s.diagram} caption={s.diagramCaption} title={s.name} />
+        </div>
+      )}
 
       <div className="space-y-4">
         <div className="card"><Section title="Use it when"><Bullets items={s.whenToUse} /></Section>
@@ -67,6 +99,17 @@ export default function ServiceDetail() {
             </div>
           </Section>
         )}
+
+        <div className="grid grid-cols-2 gap-2">
+          <button onClick={toggleLearned} className={learned ? 'btn-ghost border-accent text-accent' : 'btn-primary'}>
+            {learned ? '✓ Learned' : 'Mark as learned'}
+          </button>
+          {nextInPath ? (
+            <Link to={`/learn/services/${nextInPath}`} className="btn-ghost">Next in path ›</Link>
+          ) : (
+            <Link to="/learn" className="btn-ghost">Back to path</Link>
+          )}
+        </div>
 
         <div className="flex flex-wrap gap-2 text-sm">
           <a href={s.docs} target="_blank" rel="noreferrer" className="btn-ghost">AWS docs ↗</a>

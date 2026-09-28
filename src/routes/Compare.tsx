@@ -1,7 +1,10 @@
 import type { ReactNode } from 'react'
 import { useSearchParams } from 'react-router-dom'
+import { Diagram } from '../components/Diagram'
+import { ServiceIcon } from '../components/ServiceIcon'
+import { TierBadge } from '../components/TierBadge'
 import { Bullets, Page } from '../components/ui'
-import { serviceById, services } from '../lib/content'
+import { serviceById, services, tierOf } from '../lib/content'
 
 export default function Compare() {
   const [params, setParams] = useSearchParams()
@@ -41,6 +44,17 @@ export default function Compare() {
       </div>
       {note && <div className="card mb-4 border-accent/60 text-[15px]"><strong>Key difference: </strong>{note.difference}</div>}
       {a && b && (
+        <div className="mb-4 grid grid-cols-2 gap-2">
+          {[a, b].map((s) => (
+            <div key={s.id} className="card flex flex-col items-center gap-2 p-3 text-center">
+              <ServiceIcon id={s.id} size={56} />
+              <span className="text-sm font-semibold leading-tight">{s.name}</span>
+              <TierBadge tier={tierOf(s.id)} />
+            </div>
+          ))}
+        </div>
+      )}
+      {a && b && (
         <div className="space-y-4">
           {rows.map(([label, render]) => (
             <div key={label}>
@@ -49,6 +63,12 @@ export default function Compare() {
                 <div className="card p-3">{render(a)}</div>
                 <div className="card p-3">{render(b)}</div>
               </div>
+            </div>
+          ))}
+          {[a, b].filter((s) => s.diagram).map((s) => (
+            <div key={s.id}>
+              <h2 className="mb-1 text-sm font-semibold uppercase tracking-wide muted">How {s.name} fits</h2>
+              <Diagram src={s.diagram!} caption={s.diagramCaption} title={s.name} />
             </div>
           ))}
         </div>

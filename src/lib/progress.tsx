@@ -11,11 +11,12 @@ export type Progress = {
   mock: Record<string, { answer: string; rating: number; at: string }[]>
   stories: Record<string, string> // LP id -> your STAR story draft
   bookmarks: NewsItem[]
+  learned: Record<string, string> // service id -> date marked learned
   activeDays: string[]
   newCardsPerDay: number
 }
 
-const empty: Progress = { srs: {}, quiz: {}, mock: {}, stories: {}, bookmarks: [], activeDays: [], newCardsPerDay: 20 }
+const empty: Progress = { srs: {}, quiz: {}, mock: {}, stories: {}, bookmarks: [], learned: {}, activeDays: [], newCardsPerDay: 20 }
 const LS_KEY = 'sa-prep-progress'
 
 function readLocal(): Progress | null {

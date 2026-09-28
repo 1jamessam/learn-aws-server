@@ -1,7 +1,8 @@
 import type { ReactNode } from 'react'
 import Markdown from 'react-markdown'
 import { Link, useNavigate } from 'react-router-dom'
-import { serviceById } from '../lib/content'
+import { serviceById, shortName } from '../lib/content'
+import { ServiceIcon } from './ServiceIcon'
 
 export function Page({ title, back, action, children }: { title: string; back?: boolean; action?: ReactNode; children: ReactNode }) {
   const nav = useNavigate()
@@ -47,8 +48,9 @@ export function ServiceChips({ ids }: { ids: string[] }) {
       {ids.map((id) => {
         const s = serviceById.get(id)
         return s ? (
-          <Link key={id} to={`/learn/services/${id}`} className="chip hover:border-accent">
-            {s.name.replace(/^(Amazon|AWS) /, '')}
+          <Link key={id} to={`/learn/services/${id}`} className="chip gap-1.5 py-0.5 pl-0.5 hover:border-accent">
+            <ServiceIcon id={id} size={22} />
+            {shortName(id)}
           </Link>
         ) : (
           <span key={id} className="chip">{id}</span>
